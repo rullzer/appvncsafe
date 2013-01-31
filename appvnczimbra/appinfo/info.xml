@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <info>
-	<id>appvnczimbra</id>
+	<id>app_vnc_zimbra</id>
 	<name>AppVNCZimbra</name>
 	<description>VNC Zimbra module</description>
 	<version>1.0</version>

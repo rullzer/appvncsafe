@@ -23,9 +23,11 @@
 *
 */
 
-// Check if we are a user
-OCP\User::checkLoggedIn();
 OCP\App::checkAppEnabled('app_vnc_zimbra');
-$id = OC_FileCache::getId($_GET["path"],false);
-OCP\JSON::success(array('id' => $id));
-?>
+
+OCP\App::register(Array(
+	'order' => 55,
+	'id' => 'app_vnc_zimbra',
+	'name' => 'AppVNCZimbra'
+));
+
