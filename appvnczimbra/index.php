@@ -23,9 +23,10 @@
 *
 */
 
-// Check if we are a user
+// Check if user is logged in
 OCP\User::checkLoggedIn();
+// Check if application is enabled.
 OCP\App::checkAppEnabled('app_vnc_zimbra');
-$id = OC_FileCache::getId($_GET["path"],false);
-OCP\JSON::success(array('id' => $id));
+//return the ID
+OCP\JSON::success(OC\Files\Filesystem::getFileInfo($_GET["path"]));
 ?>
