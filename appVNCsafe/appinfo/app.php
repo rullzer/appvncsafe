@@ -23,10 +23,11 @@
 *
 */
 
-// Check if user is logged in
-OCP\User::checkLoggedIn();
-// Check if application is enabled.
-OCP\App::checkAppEnabled('app_vnc_zimbra');
-//return the ID
-OCP\JSON::success(OC\Files\Filesystem::getFileInfo($_GET["path"]));
-?>
+OCP\App::checkAppEnabled('appVNCsafe');
+
+OCP\App::register(Array(
+	'order' => 55,
+	'id' => 'appVNCsafe',
+	'name' => 'appVNCsafe'
+));
+

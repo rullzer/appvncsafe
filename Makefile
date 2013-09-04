@@ -1,4 +1,4 @@
 all:
-	@zip -r ./appvnczimbra.zip appvnczimbra/* 
+	@zip -r ./appVNCsafe.zip appVNCsafe/* 
 clean:
-	@rm -rf ./appvnczimbra.zip
+	@rm -rf ./appVNCsafe.zip

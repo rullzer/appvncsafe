@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <info>
-	<id>app_vnc_zimbra</id>
-	<name>AppVNCZimbra</name>
-	<description>VNC Zimbra module</description>
+	<id>appVNCsafe</id>
+	<name>appVNCsafe</name>
+	<description>Module for VNCsafe</description>
 	<version>1.0.1</version>
 	<licence>AGPL</licence>
 	<author>VNC</author>
