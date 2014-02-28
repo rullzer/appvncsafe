@@ -28,5 +28,10 @@ OCP\User::checkLoggedIn();
 // Check if application is enabled.
 OCP\App::checkAppEnabled('appVNCsafe');
 //return the ID
-OCP\JSON::success(OC\Files\Filesystem::getFileInfo($_GET["path"]));
+	$op = $_GET["operation"];
+	if ($op == "tree") {
+		OCP\JSON::success(OC\Files\Filesystem::getDirectoryContent($_GET["directory"],'httpd/unix-directory'));
+	} else if ($op == "getShare" ) {
+		OCP\JSON::success(OC\Files\Filesystem::getFileInfo($_GET["path"]));
+	}
 ?>
