@@ -5,7 +5,7 @@
 *
 * @author VNC Zimbra
 * http://www.vnc.biz 
-* Copyright 2012, VNC - Virtual Network Consult GmbH
+* Copyright 2014, VNC - Virtual Network Consult AG.
 * Released under GPL Licenses.
 *
 * This library is free software; you can redistribute it and/or

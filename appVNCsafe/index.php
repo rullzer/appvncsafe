@@ -5,7 +5,7 @@
 *
 * @author VNC Zimbra
 * http://www.vnc.biz 
-* Copyright 2012, VNC - Virtual Network Consult GmbH
+* Copyright 2014, VNC - Virtual Network Consult AG.
 * Released under GPL Licenses.
 *
 * This library is free software; you can redistribute it and/or
@@ -23,15 +23,140 @@
 *
 */
 
-// Check if user is logged in
-OCP\User::checkLoggedIn();
-// Check if application is enabled.
-OCP\App::checkAppEnabled('appVNCsafe');
-//return the ID
-	$op = $_GET["operation"];
-	if ($op == "tree") {
-		OCP\JSON::success(OC\Files\Filesystem::getDirectoryContent($_GET["directory"],'httpd/unix-directory'));
-	} else if ($op == "getShare" ) {
-		OCP\JSON::success(OC\Files\Filesystem::getFileInfo($_GET["path"]));
+function formatFileArray($fileArray) {
+	$shareList = OCP\Share::getItemsShared("file", OCP\Share::FORMAT_STATUSES);
+	$dataArray = array();
+	foreach($fileArray as $fileInfo) {
+		$entry = array();
+		if (OC\Files\Filesystem::getPath($fileInfo['fileid']) == null && $fileInfo['parent']==-1) {
+			$path = $fileInfo['name'];
+		} else if ($fileInfo['name'] == "Shared" && $fileInfo["path"] == null) {
+			$path = "/Shared";
+		} else if ($fileInfo['usersPath']) {
+			$path = $fileInfo["usersPath"];
+		} else {
+			$path = OC\Files\Filesystem::getPath($fileInfo['fileid']);
+		}
+		$path = preg_replace("/^files/","",$path);
+		$entry['fileid'] = $fileInfo['fileid'];
+		$entry['parent'] = $fileInfo['parent'];
+		$entry['modifydate'] = \OCP\Util::formatDate($fileInfo['mtime']);
+		$entry['mtime'] = $fileInfo['mtime'] * 1000;
+		$entry['name'] = $fileInfo['name'];
+		$entry['permissions'] = $fileInfo['permissions'];
+		$entry['type'] = $fileInfo['mimetype'];
+		$entry['mimetype'] = $fileInfo['mimetype'];
+		$entry['size'] = $fileInfo['size'];
+		$entry['etag'] = $fileInfo['etag'];
+		$entry['path'] = $path; 
+		$entry['url'] = str_replace("%2F", "/",rawurlencode($path));
+		if ($shareList != null) {
+			if($shareList[$fileInfo['fileid']] != null){
+				$entry['share'] = $shareList[$fileInfo['fileid']]["link"];
+			}
+		}
+		$dataArray[] = $entry;
 	}
+	return $dataArray;
+}
+
+function formatFileInfo($fileInfo,$shareList = null) {
+	$entry = array();
+	$mountType = null;
+	if ($fileInfo->isShared()) {
+		$mountType = 'shared';
+	} else if ($fileInfo->isMounted()) {
+		$mountType = 'external';
+	}
+	if ($mountType !== null) {
+		if ($fileInfo->getInternalPath() === '') {
+			$mountType .= '-root';
+		}
+		$entry['mountType'] = $mountType;
+	}
+	$path = preg_replace("/^files/","",$fileInfo['path']);
+	if ($mountType == 'external' || $mountType == 'shared') {
+		$path = \OC\Files\Filesystem::getPath($fileInfo['fileid']);
+	}
+	$entry['fileid'] = $fileInfo['fileid'];
+	$entry['parent'] = $fileInfo['parent'];
+	$entry['modifydate'] = \OCP\Util::formatDate($fileInfo['mtime']);
+	$entry['mtime'] = $fileInfo['mtime'] * 1000;
+	// only pick out the needed attributes
+	$entry['icon'] = \OCA\Files\Helper::determineIcon($fileInfo);
+	if (\OC::$server->getPreviewManager()->isMimeSupported($fileInfo['mimetype'])) {
+		$entry['isPreviewAvailable'] = true;
+	}
+	$entry['name'] = $fileInfo->getName();
+	$entry['permissions'] = $fileInfo['permissions'];
+	$entry['type'] = $fileInfo['mimetype'];
+	$entry['mimetype'] = $fileInfo['mimetype'];
+	$entry['size'] = $fileInfo['size'];
+	$entry['etag'] = $fileInfo['etag'];
+	$entry['path'] = $path;
+	$entry['url'] = str_replace("%2F", "/",rawurlencode($path));
+	if (isset($fileInfo['displayname_owner'])) {
+		$entry['shareOwner'] = $fileInfo['displayname_owner'];
+	}
+	if (isset($fileInfo['is_share_mount_point'])) {
+		$entry['isShareMountPoint'] = $fileInfo['is_share_mount_point'];
+	}
+	if ($shareList != null) {
+		if ($shareList[$fileInfo['fileid']] != null) {
+			$entry['share'] = $shareList[$fileInfo['fileid']]["link"];
+		}
+	}
+	return $entry;
+}
+
+function formatFileInfos($fileInfos) {
+	$shareList = OCP\Share::getItemsShared("file", OCP\Share::FORMAT_STATUSES);
+	$files = array();
+	foreach ($fileInfos as $fileInfo) {
+		$files[] = formatFileInfo($fileInfo,$shareList);
+	}
+	return $files;
+}
+
+$version = \OCP\Util::getVersion();
+// Check if user is logged in
+\OCP\User::checkLoggedIn();
+// Check if application is enabled.
+\OCP\App::checkAppEnabled('appVNCsafe');
+
+$op = $_GET["operation"];
+$op = $_GET["operation"];
+if($op == null) {
+	$op = $_POST["operation"];
+}
+if ($op == "tree") {
+	if($version[0] == 7) {
+		\OCP\JSON::success(formatFileInfos(\OC\Files\Filesystem::getDirectoryContent($_GET['directory'],"httpd/unix-directory")));
+	} else {
+		\OCP\JSON::success(\OC\Files\Filesystem::getDirectoryContent($_GET['directory'],"httpd/unix-directory"));
+	}
+} else if ($op == "list") {
+	if($version[0] == 7) {
+		\OCP\JSON::encodedPrint(formatFileInfos(\OC\Files\Filesystem::getDirectoryContent($_GET['directory'])));
+	} else {
+		\OCP\JSON::encodedPrint(formatFileArray(\OC\Files\Filesystem::getDirectoryContent($_GET['directory'])));
+	}
+} else if ($op == "delete") {
+	foreach($_POST['files'] as $file){
+		\OC\Files\Filesystem::unlink(urldecode($file));
+	}
+	\OCP\JSON::success();
+} else if ($op == "getShare" ) {
+	if($version[0] == 7) {
+		\OCP\JSON::success(formatFileInfo(OC\Files\Filesystem::getFileInfo($_GET["path"])));
+	} else {
+		\OCP\JSON::success(OC\Files\Filesystem::getFileInfo($_GET["path"]));
+	}
+} else if ($op == "search" ) {
+	if ($version[0] == 7) {
+		\OCP\JSON::encodedPrint(formatFileInfos(OC\Files\Filesystem::search($_GET["query"])));
+	} else {
+		\OCP\JSON::encodedPrint(formatFileArray(OC\Files\Filesystem::search($_GET["query"])));
+	}
+}
 ?>
