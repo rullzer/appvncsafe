@@ -34,6 +34,8 @@ function formatFileArray($fileArray) {
 			$path = "/Shared";
 		} else if ($fileInfo['usersPath']) {
 			$path = $fileInfo["usersPath"];
+			$reshare = \OCP\Share::getItemSharedWithBySource('file', $fileInfo['itemSource'], OCP\Share::FORMAT_NONE, null, true);
+			$entry['shareOwner'] = $reshare['uid_owner'];
 		} else {
 			$path = OC\Files\Filesystem::getPath($fileInfo['fileid']);
 		}
