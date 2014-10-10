@@ -30,6 +30,7 @@ function formatFileArray($fileArray) {
 		$entry = array();
 		if (OC\Files\Filesystem::getPath($fileInfo['fileid']) == null && $fileInfo['parent']==-1) {
 			$path = $fileInfo['name'];
+			$entry['mountType'] = "external-root";
 		} else if ($fileInfo['name'] == "Shared" && $fileInfo["path"] == null) {
 			$path = "/Shared";
 		} else if ($fileInfo['usersPath']) {
