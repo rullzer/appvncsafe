@@ -23,11 +23,5 @@
 *
 */
 
-OCP\App::checkAppEnabled('appVNCsafe');
-
-OCP\App::register(Array(
-	'order' => 55,
-	'id' => 'appVNCsafe',
-	'name' => 'appVNCsafe'
-));
-
+$this->create('appVNCsafe_index', '/')
+    ->actionInclude('appVNCsafe/index.php');

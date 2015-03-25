@@ -5,7 +5,7 @@
 *
 * @author VNC Zimbra
 * http://www.vnc.biz 
-* Copyright 2014, VNC - Virtual Network Consult AG.
+* Copyright 2015, VNC - Virtual Network Consult AG.
 * Released under GPL Licenses.
 *
 * This library is free software; you can redistribute it and/or
@@ -128,18 +128,17 @@ $version = \OCP\Util::getVersion();
 \OCP\App::checkAppEnabled('appVNCsafe');
 
 $op = $_GET["operation"];
-$op = $_GET["operation"];
 if($op == null) {
 	$op = $_POST["operation"];
 }
 if ($op == "tree") {
-	if($version[0] == 7) {
+	if($version[0] == 7 || $version[0] == 8) {
 		\OCP\JSON::success(formatFileInfos(\OC\Files\Filesystem::getDirectoryContent($_GET['directory'],"httpd/unix-directory")));
 	} else {
 		\OCP\JSON::success(\OC\Files\Filesystem::getDirectoryContent($_GET['directory'],"httpd/unix-directory"));
 	}
 } else if ($op == "list") {
-	if($version[0] == 7) {
+	if($version[0] == 7 || $version[0] == 8) {
 		\OCP\JSON::encodedPrint(formatFileInfos(\OC\Files\Filesystem::getDirectoryContent($_GET['directory'])));
 	} else {
 		\OCP\JSON::encodedPrint(formatFileArray(\OC\Files\Filesystem::getDirectoryContent($_GET['directory'])));
@@ -150,13 +149,13 @@ if ($op == "tree") {
 	}
 	\OCP\JSON::success();
 } else if ($op == "getShare" ) {
-	if($version[0] == 7) {
+	if($version[0] == 7 || $version[0] == 8) {
 		\OCP\JSON::success(formatFileInfo(OC\Files\Filesystem::getFileInfo($_GET["path"])));
 	} else {
 		\OCP\JSON::success(OC\Files\Filesystem::getFileInfo($_GET["path"]));
 	}
 } else if ($op == "search" ) {
-	if ($version[0] == 7) {
+	if ($version[0] == 7 || $version[0] == 8) {
 		\OCP\JSON::encodedPrint(formatFileInfos(OC\Files\Filesystem::search($_GET["query"])));
 	} else {
 		\OCP\JSON::encodedPrint(formatFileArray(OC\Files\Filesystem::search($_GET["query"])));
