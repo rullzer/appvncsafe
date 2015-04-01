@@ -58,6 +58,8 @@ function formatFileArray($fileArray) {
 				$entry['share'] = $shareList[$fileInfo['fileid']]["link"];
 			}
 		}
+		$version = \OCP\Util::getVersion();
+		$entry['owversion'] = $version[0];
 		$dataArray[] = $entry;
 	}
 	return $dataArray;
@@ -109,6 +111,8 @@ function formatFileInfo($fileInfo,$shareList = null) {
 			$entry['share'] = $shareList[$fileInfo['fileid']]["link"];
 		}
 	}
+	$version = \OCP\Util::getVersion();
+	$entry['owversion'] = $version[0];
 	return $entry;
 }
 
