@@ -130,6 +130,8 @@ $version = \OCP\Util::getVersion();
 \OCP\User::checkLoggedIn();
 // Check if application is enabled.
 \OCP\App::checkAppEnabled('appVNCsafe');
+// Check for CSRF
+\OCP\JSON::callCheck();
 
 $op = $_GET["operation"];
 if($op == null) {
