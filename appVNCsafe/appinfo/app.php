@@ -25,9 +25,20 @@
 
 OCP\App::checkAppEnabled('appVNCsafe');
 
-OCP\App::register(Array(
-	'order' => 55,
-	'id' => 'appVNCsafe',
-	'name' => 'appVNCsafe'
-));
+$version = \OCP\Util::getVersion();
 
+if($version[0]==8 && $version[1]==2){
+	$navigationManager = \OC::$server->getNavigationManager();
+	$navigationEntry = function (){
+		return ['order' => 55,
+			'id' => 'appVNCsafe',
+			'name' => 'appVNCsafe'
+			];
+	};
+}else{
+	OCP\App::register(Array(
+		'order' => 55,
+		'id' => 'appVNCsafe',
+		'name' => 'appVNCsafe'
+	));
+}
