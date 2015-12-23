@@ -125,6 +125,16 @@ function formatFileInfos($fileInfos) {
 	return $files;
 }
 
+function checkFileExists($files) {
+	foreach ($files as $file) {
+		if(\OC\Files\Filesystem::file_exists(urldecode($file))) {
+			return true;
+		}
+	}
+	return false;
+}
+
+
 $version = \OCP\Util::getVersion();
 // Check if user is logged in
 \OCP\User::checkLoggedIn();
@@ -166,5 +176,12 @@ if ($op == "tree") {
 	} else {
 		\OCP\JSON::encodedPrint(formatFileArray(OC\Files\Filesystem::search($_GET["query"])));
 	}
+} else if ($op == "exists" ) {
+	if ($version[0] == 7 || $version[0] == 8) {
+		\OCP\JSON::encodedPrint(checkFileExists($_POST["files"]));
+	} else {
+		\OCP\JSON::encodedPrint(checkFileExists($_POST["files"]));
+	}
 }
+
 ?>
