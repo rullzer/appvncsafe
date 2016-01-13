@@ -182,6 +182,25 @@ if ($op == "tree") {
 	} else {
 		\OCP\JSON::encodedPrint(checkFileExists($_POST["files"]));
 	}
+} else if ($op == "copy") {
+	$dest = urldecode($_POST['dest']);
+	foreach($_POST['src'] as $file){
+		$dfile = urldecode($file);
+		$fdest = $dest . substr($dfile, strripos($dfile, "/"));
+		if(!(\OC\Files\Filesystem::copy($dfile, $fdest))) {
+			return \OCP\JSON::error();
+		}
+	}
+	\OCP\JSON::success();
+} else if ($op == "move") {
+	$dest = urldecode($_POST['dest']);
+	foreach($_POST['src'] as $file){
+		$dfile = urldecode($file);
+		$fdest = $dest . substr($dfile, strripos($dfile, "/"));
+		if(!(\OC\Files\Filesystem::rename($dfile, $fdest))) {
+			return \OCP\JSON::error();
+		}
+	}
+	\OCP\JSON::success();
 }
-
 ?>
