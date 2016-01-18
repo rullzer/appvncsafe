@@ -202,5 +202,15 @@ if ($op == "tree") {
 		}
 	}
 	\OCP\JSON::success();
+} else if ($op == "rename") {
+	$path = urldecode($_POST['path']);
+	$oldname = urldecode($_POST['oldname']);
+	$newname = urldecode($_POST['newname']);
+	$opath = $path.$oldname;
+	$npath = $path.$newname;
+	if(!(\OC\Files\Filesystem::rename($opath, $npath))) {
+		return \OCP\JSON::error();
+	}
+	\OCP\JSON::success();
 }
 ?>
