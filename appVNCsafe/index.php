@@ -134,6 +134,22 @@ function checkFileExists($files) {
 	return false;
 }
 
+function copyr($src, $dest){
+	if (!\OC\Files\Filesystem::is_dir($src)) {
+		return \OC\Files\Filesystem::copy($src, $dest);
+	} else {
+		if (($dh = \OC\Files\Filesystem::opendir($src)) !== false) {
+			if (!\OC\Files\Filesystem::file_exists($dest)) {
+				\OC\Files\Filesystem::mkdir($dest);
+			}
+			while (($file = readdir($dh)) !== false) {
+				if ($file == "." || $file == "..") continue;
+				if (!copyr($src.'/'.$file, $dest.'/'.$file)) return false;
+			}
+		}
+		return true;
+	}
+}
 
 $version = \OCP\Util::getVersion();
 // Check if user is logged in
@@ -183,15 +199,27 @@ if ($op == "tree") {
 		\OCP\JSON::encodedPrint(checkFileExists($_POST["files"]));
 	}
 } else if ($op == "copy") {
+	$src = $_POST['src'];
 	$dest = urldecode($_POST['dest']);
-	foreach($_POST['src'] as $file){
-		$dfile = urldecode($file);
-		$fdest = $dest . substr($dfile, strripos($dfile, "/"));
-		if(!(\OC\Files\Filesystem::copy($dfile, $fdest))) {
-			return \OCP\JSON::error();
+	if ($version[0] == 6) {
+		foreach( $src as $file){
+			$dfile = urldecode($file);
+			$fdest = $dest . substr($dfile, strripos($dfile, "/"));
+			if(!copyr($dfile, $fdest)) {
+				return \OCP\JSON::error();
+			}
 		}
+		\OCP\JSON::success();
+	} else {
+		foreach($src as $file) {
+			$dfile = urldecode($file);
+			$fdest = $dest . substr($dfile, strripos($dfile, "/"));
+			if(!(\OC\Files\Filesystem::copy($dfile, $fdest))) {
+				return \OCP\JSON::error();
+			}
+		}
+		\OCP\JSON::success();
 	}
-	\OCP\JSON::success();
 } else if ($op == "move") {
 	$dest = urldecode($_POST['dest']);
 	foreach($_POST['src'] as $file){
