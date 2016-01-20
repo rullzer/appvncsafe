@@ -240,5 +240,15 @@ if ($op == "tree") {
 		return \OCP\JSON::error();
 	}
 	\OCP\JSON::success();
+} else if ($op == "createNewFolder") {
+	$path = urldecode($_GET['path']);
+	if (!\OC\Files\Filesystem::file_exists($path)) {
+		if(!\OC\Files\Filesystem::mkdir($path)) {
+			return \OCP\JSON::error();
+		}
+	} else {
+		return \OCP\JSON::encodedPrint(array("status" => "exist"));
+	}
+	return \OCP\JSON::success();
 }
 ?>
