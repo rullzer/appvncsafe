@@ -157,23 +157,25 @@ $version = \OCP\Util::getVersion();
 // Check if application is enabled.
 \OCP\App::checkAppEnabled('appVNCsafe');
 // Check for CSRF
-\OCP\JSON::callCheck();
+if($version[0] != 9) {
+	\OCP\JSON::callCheck();
+}
 
 $op = $_GET["operation"];
 if($op == null) {
 	$op = $_POST["operation"];
 }
 if ($op == "tree") {
-	if($version[0] == 7 || $version[0] == 8) {
-		\OCP\JSON::success(formatFileInfos(\OC\Files\Filesystem::getDirectoryContent($_GET['directory'],"httpd/unix-directory")));
-	} else {
+	if($version[0] == 6) {
 		\OCP\JSON::success(\OC\Files\Filesystem::getDirectoryContent($_GET['directory'],"httpd/unix-directory"));
+	} else {
+		\OCP\JSON::success(formatFileInfos(\OC\Files\Filesystem::getDirectoryContent($_GET['directory'],"httpd/unix-directory")));
 	}
 } else if ($op == "list") {
-	if($version[0] == 7 || $version[0] == 8) {
-		\OCP\JSON::encodedPrint(formatFileInfos(\OC\Files\Filesystem::getDirectoryContent($_GET['directory'])));
-	} else {
+	if($version[0] == 6) {
 		\OCP\JSON::encodedPrint(formatFileArray(\OC\Files\Filesystem::getDirectoryContent($_GET['directory'])));
+	} else {
+		\OCP\JSON::encodedPrint(formatFileInfos(\OC\Files\Filesystem::getDirectoryContent($_GET['directory'])));
 	}
 } else if ($op == "delete") {
 	foreach($_POST['files'] as $file){
@@ -181,19 +183,19 @@ if ($op == "tree") {
 	}
 	\OCP\JSON::success();
 } else if ($op == "getShare" ) {
-	if($version[0] == 7 || $version[0] == 8) {
-		\OCP\JSON::success(formatFileInfo(OC\Files\Filesystem::getFileInfo($_GET["path"])));
-	} else {
+	if($version[0] == 6) {
 		\OCP\JSON::success(OC\Files\Filesystem::getFileInfo($_GET["path"]));
+	} else {
+		\OCP\JSON::success(formatFileInfo(OC\Files\Filesystem::getFileInfo($_GET["path"])));
 	}
 } else if ($op == "search" ) {
-	if ($version[0] == 7 || $version[0] == 8) {
-		\OCP\JSON::encodedPrint(formatFileInfos(OC\Files\Filesystem::search($_GET["query"])));
-	} else {
+	if ($version[0] == 6) {
 		\OCP\JSON::encodedPrint(formatFileArray(OC\Files\Filesystem::search($_GET["query"])));
+	} else {
+		\OCP\JSON::encodedPrint(formatFileInfos(OC\Files\Filesystem::search($_GET["query"])));
 	}
 } else if ($op == "exists" ) {
-	if ($version[0] == 7 || $version[0] == 8) {
+	if ($version[0] == 6) {
 		\OCP\JSON::encodedPrint(checkFileExists($_POST["files"]));
 	} else {
 		\OCP\JSON::encodedPrint(checkFileExists($_POST["files"]));
@@ -249,6 +251,21 @@ if ($op == "tree") {
 	} else {
 		return \OCP\JSON::encodedPrint(array("status" => "exist"));
 	}
+	return \OCP\JSON::success();
+} else if ($op == "sendMail") {
+	$toaddressh = urldecode($_POST['toaddress']);
+	$link = urldecode($_POST['link']);
+	$type = urldecode($_POST['type']);
+	$expiration = urldecode($_POST['expiration']);
+	$defaults = new \OCP\Defaults();
+	$mailNotification = new \OC\Share\MailNotifications(
+		\OC::$server->getUserSession()->getUser(),
+		\OC::$server->getL10N('lib'),
+		\OC::$server->getMailer(),
+		\OC::$server->getLogger(),
+		$defaults
+	);
+	$result = $mailNotification->sendLinkShareMail($toaddressh, $type, $link,$expiration);
 	return \OCP\JSON::success();
 }
 ?>
