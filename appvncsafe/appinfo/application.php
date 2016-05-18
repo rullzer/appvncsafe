@@ -23,5 +23,30 @@
 *
 */
 
-$this->create('appVNCsafe_index', '/')
-    ->actionInclude('appVNCsafe/index.php');
+
+namespace OCA\Appvncsafe\AppInfo;
+
+use \OCP\AppFramework\App;
+
+use \OCA\Appvncsafe\Controller\ServiceController;
+
+
+class Application extends App {
+    public function __construct(array $urlParams=array()){
+        parent::__construct('appvncsafe', $urlParams);
+
+        $container = $this->getContainer();
+
+        /**
+         * Controllers
+         */
+        $container->registerService('ServiceController', function($c) {
+            return new ServiceController(
+                $c->query('appvncsafe'),
+                $c->query('Request')
+            );
+        });
+    }
+
+}
+

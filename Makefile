@@ -1,4 +1,4 @@
 all:
-	@zip -r ./appVNCsafe.zip appVNCsafe/* 
+	@zip -r ./appvncsafe.zip appvncsafe/* 
 clean:
-	@rm -rf ./appVNCsafe.zip
+	@rm -rf ./appvncsafe.zip
