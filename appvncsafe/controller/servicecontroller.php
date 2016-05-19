@@ -39,7 +39,7 @@ class ServiceController extends Controller {
 	*	@NoCSRFRequired
 	*/
 	public function getList($name) {
-		return $this->encodeData($this->formatFileInfos(\OC\Files\Filesystem::getDirectoryContent($name)));
+		return $this->encodeData($this->formatFileInfos(\OC\Files\Filesystem::getDirectoryContent(urldecode($name))));
 	}
 
 	/**
