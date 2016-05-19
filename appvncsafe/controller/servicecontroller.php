@@ -23,7 +23,6 @@
 *
 */
 
-
 namespace OCA\Appvncsafe\Controller;
 
 use \OCP\IRequest;
@@ -37,31 +36,27 @@ class ServiceController extends Controller {
 	}
 
 	/**
-		* @NoAdminRequired
-		* @NoCSRFRequired
+	*	@NoCSRFRequired
 	*/
 	public function getList($name) {
 		return $this->encodeData($this->formatFileInfos(\OC\Files\Filesystem::getDirectoryContent($name)));
 	}
 
 	/**
-		* @NoAdminRequired
-		* @NoCSRFRequired
+	*	@NoCSRFRequired
 	*/
 	public function getTree($name) {
 		return $this->encodeData($this->formatFileInfos(\OC\Files\Filesystem::getDirectoryContent($name,"httpd/unix-directory")));
 	}
 
 	/**
-		* @NoAdminRequired
 		* @NoCSRFRequired
 	*/
 	public function getShare($path) {
-		return \OCP\JSON::success($this->formatFileInfo(\OC\Files\Filesystem::getFileInfo($path)));
+		return $this->encodeData($this->formatFileInfo(\OC\Files\Filesystem::getFileInfo($path)));
 	}
 
 	/**
-		* @NoAdminRequired
 		* @NoCSRFRequired
 	*/
 	public function getSearch($query) {
@@ -69,7 +64,6 @@ class ServiceController extends Controller {
 	}
 
 	/**
-		* @NoAdminRequired
 		* @NoCSRFRequired
 	*/
 	public function getFileExists($file) {
@@ -78,7 +72,6 @@ class ServiceController extends Controller {
 	}
 
 	/**
-		* @NoAdminRequired
 		* @NoCSRFRequired
 	*/
 	public function deleteFile($names) {
@@ -90,60 +83,53 @@ class ServiceController extends Controller {
 	}
 
 	/**
-		* @NoAdminRequired
 		* @NoCSRFRequired
 	*/
 	public function copyFile($source,$destination) {
-		$src = $source;
-		$dest = urldecode($destination);
+		$src = explode(",",$source);
+		$dest = str_replace('+', '\\', $destination);
 		foreach($src as $file) {
 			$dfile = urldecode($file);
 			$fdest = $dest . substr($dfile, strripos($dfile, "/"));
 			if(!(\OC\Files\Filesystem::copy($dfile, $fdest))) {
-				return \OCP\JSON::error();
+				return $this->encodeData(array("status" => "success"));
 			}
 		}
-		return \OCP\JSON::success();
+		return $this->encodeData(array("status" => "success"));
 	}
 
 	/**
-		* @NoAdminRequired
 		* @NoCSRFRequired
 	*/
 	public function moveFile($source,$destination) {
-		$src = $source;
-		$dest = urldecode($destination);
+		$src = explode(",",$source);
+		$dest = str_replace('+', '\\', $destination);
 		foreach($src as $file){
 			$dfile = urldecode($file);
 			$fdest = $dest . substr($dfile, strripos($dfile, "/"));
 			if(!(\OC\Files\Filesystem::rename($dfile, $fdest))) {
-				return \OCP\JSON::error();
+				return $this->encodeData(array("status" => "success"));
 			}
 		}
-		return \OCP\JSON::success();
+		return $this->encodeData(array("status" => "success"));
 	}
 
 	/**
-		* @NoAdminRequired
 		* @NoCSRFRequired
 	*/
 	public function renameFile($oldname,$newname,$path) {
-		echo 'path ::  '.$path;
-		echo "old :: ".$oldname;
-		echo "newname :: ".$newname;
 		$path = urldecode($path);
 		$oldname = urldecode($oldname);
 		$newname = urldecode($newname);
 		$opath = $path.$oldname;
 		$npath = $path.$newname;
 		if(!(\OC\Files\Filesystem::rename($opath, $npath))) {
-			return \OCP\JSON::error();
+			return $this->encodeData(array("status" => "error"));
 		}
-		return \OCP\JSON::success();
+		return $this->encodeData(array("status" => "success"));
 	}
 
 	/**
-		* @NoAdminRequired
 		* @NoCSRFRequired
 	*/
 	public function createFolder($path) {
@@ -159,14 +145,12 @@ class ServiceController extends Controller {
 	}
 
 	/**
-		* @NoAdminRequired
 		* @NoCSRFRequired
 	*/
-	public function sendMail($toaddress,$link,$type,$expiration) {
+	public function sendMail($toaddress,$type,$link) {
 		$toaddressh = urldecode($toaddress);
 		$link = urldecode($link);
 		$type = urldecode($type);
-		$expiration = urldecode($expiration);
 		$defaults = new \OCP\Defaults();
 		$mailNotification = new \OC\Share\MailNotifications(
 			\OC::$server->getUserSession()->getUser(),
@@ -175,7 +159,7 @@ class ServiceController extends Controller {
 			\OC::$server->getLogger(),
 			$defaults
 		);
-		$result = $mailNotification->sendLinkShareMail($toaddressh, $type, $link,$expiration);
+		$result = $mailNotification->sendLinkShareMail($toaddressh, $type, $link,'');
 		return $this->encodeData(array("status" => "success"));
 	}
 
@@ -187,145 +171,137 @@ class ServiceController extends Controller {
 	}
 
 
-function formatFileArray($fileArray) {
-	$version = \OCP\Util::getVersion();
-	$shareList = OCP\Share::getItemsShared("file", OCP\Share::FORMAT_STATUSES);
-	$dataArray = array();
-	foreach($fileArray as $fileInfo) {
-		$entry = array();
-		if (OC\Files\Filesystem::getPath($fileInfo['fileid']) == null && $fileInfo['parent']==-1) {
-			$path = $fileInfo['name'];
-			$entry['mountType'] = "external-root";
-		} else if ($fileInfo['name'] == "Shared" && $fileInfo["path"] == null) {
-			$path = "/Shared";
-		} else if ($fileInfo['usersPath']) {
-			$path = $fileInfo["usersPath"];
-			$reshare = \OCP\Share::getItemSharedWithBySource('file', $fileInfo['itemSource'], OCP\Share::FORMAT_NONE, null, true);
-			$entry['shareOwner'] = $reshare['uid_owner'];
-		} else {
-			$path = OC\Files\Filesystem::getPath($fileInfo['fileid']);
+	function formatFileArray($fileArray) {
+		$version = \OCP\Util::getVersion();
+		$shareList = OCP\Share::getItemsShared("file", OCP\Share::FORMAT_STATUSES);
+		$dataArray = array();
+		foreach($fileArray as $fileInfo) {
+			$entry = array();
+			if (OC\Files\Filesystem::getPath($fileInfo['fileid']) == null && $fileInfo['parent']==-1) {
+				$path = $fileInfo['name'];
+				$entry['mountType'] = "external-root";
+			} else if ($fileInfo['name'] == "Shared" && $fileInfo["path"] == null) {
+				$path = "/Shared";
+			} else if ($fileInfo['usersPath']) {
+				$path = $fileInfo["usersPath"];
+				$reshare = \OCP\Share::getItemSharedWithBySource('file', $fileInfo['itemSource'], OCP\Share::FORMAT_NONE, null, true);
+				$entry['shareOwner'] = $reshare['uid_owner'];
+			} else {
+				$path = OC\Files\Filesystem::getPath($fileInfo['fileid']);
+			}
+			$path = preg_replace("/^files/","",$path);
+			$entry['fileid'] = $fileInfo['fileid'];
+			$entry['parent'] = $fileInfo['parent'];
+			$entry['modifydate'] = \OCP\Util::formatDate($fileInfo['mtime']);
+			$entry['mtime'] = $fileInfo['mtime'] * 1000;
+			$entry['name'] = $fileInfo['name'];
+			$entry['permissions'] = $fileInfo['permissions'];
+			$entry['type'] = $fileInfo['mimetype'];
+			$entry['mimetype'] = $fileInfo['mimetype'];
+			$entry['size'] = $fileInfo['size'];
+			$entry['etag'] = $fileInfo['etag'];
+			$entry['path'] = $path; 
+			$entry['url'] = str_replace("%2F", "/",rawurlencode($path));
+			if ($shareList != null) {
+				if($shareList[$fileInfo['fileid']] != null){
+					$entry['share'] = $shareList[$fileInfo['fileid']]["link"];
+				}
+			}
+			$entry['owversion'] = $version[0];
+			$dataArray[] = $entry;
 		}
-		$path = preg_replace("/^files/","",$path);
+		return $dataArray;
+	}
+
+	/**
+		* @NoCSRFRequired
+	*/
+	function formatFileInfo($fileInfo,$shareList = null) {
+		$entry = array();
+		$mountType = null;
+		if ($fileInfo->isShared()) {
+			$mountType = 'shared';
+		} else if ($fileInfo->isMounted()) {
+			$mountType = 'external';
+		}
+		if ($mountType !== null) {
+			if ($fileInfo->getInternalPath() === '') {
+				$mountType .= '-root';
+			}
+			$entry['mountType'] = $mountType;
+		}
+		$path = preg_replace("/^files/","",$fileInfo['path']);
+		if ($mountType == 'external' || $mountType == 'shared') {
+			$path = \OC\Files\Filesystem::getPath($fileInfo['fileid']);
+		}
 		$entry['fileid'] = $fileInfo['fileid'];
 		$entry['parent'] = $fileInfo['parent'];
 		$entry['modifydate'] = \OCP\Util::formatDate($fileInfo['mtime']);
 		$entry['mtime'] = $fileInfo['mtime'] * 1000;
-		$entry['name'] = $fileInfo['name'];
+		// only pick out the needed attributes
+		$entry['icon'] = \OCA\Files\Helper::determineIcon($fileInfo);
+		if (\OC::$server->getPreviewManager()->isMimeSupported($fileInfo['mimetype'])) {
+			$entry['isPreviewAvailable'] = true;
+		}
+		$entry['name'] = $fileInfo->getName();
 		$entry['permissions'] = $fileInfo['permissions'];
 		$entry['type'] = $fileInfo['mimetype'];
 		$entry['mimetype'] = $fileInfo['mimetype'];
 		$entry['size'] = $fileInfo['size'];
 		$entry['etag'] = $fileInfo['etag'];
-		$entry['path'] = $path; 
+		$entry['path'] = $path;
 		$entry['url'] = str_replace("%2F", "/",rawurlencode($path));
+		if (isset($fileInfo['displayname_owner'])) {
+			$entry['shareOwner'] = $fileInfo['displayname_owner'];
+		}
+		if (isset($fileInfo['is_share_mount_point'])) {
+			$entry['isShareMountPoint'] = $fileInfo['is_share_mount_point'];
+		}
 		if ($shareList != null) {
-			if($shareList[$fileInfo['fileid']] != null){
+			if ($shareList[$fileInfo['fileid']] != null) {
 				$entry['share'] = $shareList[$fileInfo['fileid']]["link"];
 			}
 		}
+		$version = \OCP\Util::getVersion();
 		$entry['owversion'] = $version[0];
-		$dataArray[] = $entry;
+		return $entry;
 	}
-	return $dataArray;
-}
 
     /**
-     * redirect to /apps/news/myapp/authors/3
-	 * @NoAdminRequired
      * @NoCSRFRequired
-     * @PublicPage
      */
-function formatFileInfo($fileInfo,$shareList = null) {
-	$entry = array();
-	$mountType = null;
-	if ($fileInfo->isShared()) {
-		$mountType = 'shared';
-	} else if ($fileInfo->isMounted()) {
-		$mountType = 'external';
-	}
-	if ($mountType !== null) {
-		if ($fileInfo->getInternalPath() === '') {
-			$mountType .= '-root';
+	public function formatFileInfos($fileInfos) {
+		$shareList = \OCP\Share::getItemsShared("file", \OCP\Share::FORMAT_STATUSES);
+		$files = array();
+		foreach ($fileInfos as $fileInfo) {
+			$files[] = $this->formatFileInfo($fileInfo,$shareList);
 		}
-		$entry['mountType'] = $mountType;
+		return $files;
 	}
-	$path = preg_replace("/^files/","",$fileInfo['path']);
-	if ($mountType == 'external' || $mountType == 'shared') {
-		$path = \OC\Files\Filesystem::getPath($fileInfo['fileid']);
-	}
-	$entry['fileid'] = $fileInfo['fileid'];
-	$entry['parent'] = $fileInfo['parent'];
-	$entry['modifydate'] = \OCP\Util::formatDate($fileInfo['mtime']);
-	$entry['mtime'] = $fileInfo['mtime'] * 1000;
-	// only pick out the needed attributes
-	$entry['icon'] = \OCA\Files\Helper::determineIcon($fileInfo);
-	if (\OC::$server->getPreviewManager()->isMimeSupported($fileInfo['mimetype'])) {
-		$entry['isPreviewAvailable'] = true;
-	}
-	$entry['name'] = $fileInfo->getName();
-	$entry['permissions'] = $fileInfo['permissions'];
-	$entry['type'] = $fileInfo['mimetype'];
-	$entry['mimetype'] = $fileInfo['mimetype'];
-	$entry['size'] = $fileInfo['size'];
-	$entry['etag'] = $fileInfo['etag'];
-	$entry['path'] = $path;
-	$entry['url'] = str_replace("%2F", "/",rawurlencode($path));
-	if (isset($fileInfo['displayname_owner'])) {
-		$entry['shareOwner'] = $fileInfo['displayname_owner'];
-	}
-	if (isset($fileInfo['is_share_mount_point'])) {
-		$entry['isShareMountPoint'] = $fileInfo['is_share_mount_point'];
-	}
-	if ($shareList != null) {
-		if ($shareList[$fileInfo['fileid']] != null) {
-			$entry['share'] = $shareList[$fileInfo['fileid']]["link"];
+
+	function checkFileExists($files) {
+		foreach ($files as $file) {
+			if(\OC\Files\Filesystem::file_exists(urldecode($file))) {
+				return true;
+			}
 		}
+		return false;
 	}
 
-	$version = \OCP\Util::getVersion();
-	$entry['owversion'] = $version[0];
-	return $entry;
-}
-
-    /**
-     * redirect to /apps/news/myapp/authors/3
-	 * @NoAdminRequired
-     * @NoCSRFRequired
-     * @PublicPage
-     */
-public function formatFileInfos($fileInfos) {
-	$shareList = \OCP\Share::getItemsShared("file", \OCP\Share::FORMAT_STATUSES);
-	$files = array();
-	foreach ($fileInfos as $fileInfo) {
-		$files[] = $this->formatFileInfo($fileInfo,$shareList);
-	}
-	return $files;
-}
-
-function checkFileExists($files) {
-	foreach ($files as $file) {
-		if(\OC\Files\Filesystem::file_exists(urldecode($file))) {
+	function copyr($src, $dest){
+		if (!\OC\Files\Filesystem::is_dir($src)) {
+			return \OC\Files\Filesystem::copy($src, $dest);
+		} else {
+			if (($dh = \OC\Files\Filesystem::opendir($src)) !== false) {
+				if (!\OC\Files\Filesystem::file_exists($dest)) {
+					\OC\Files\Filesystem::mkdir($dest);
+				}
+				while (($file = readdir($dh)) !== false) {
+					if ($file == "." || $file == "..") continue;
+					if (!copyr($src.'/'.$file, $dest.'/'.$file)) return false;
+				}
+			}
 			return true;
 		}
 	}
-	return false;
 }
-
-function copyr($src, $dest){
-	if (!\OC\Files\Filesystem::is_dir($src)) {
-		return \OC\Files\Filesystem::copy($src, $dest);
-	} else {
-		if (($dh = \OC\Files\Filesystem::opendir($src)) !== false) {
-			if (!\OC\Files\Filesystem::file_exists($dest)) {
-				\OC\Files\Filesystem::mkdir($dest);
-			}
-			while (($file = readdir($dh)) !== false) {
-				if ($file == "." || $file == "..") continue;
-				if (!copyr($src.'/'.$file, $dest.'/'.$file)) return false;
-			}
-		}
-		return true;
-	}
-}
-}
-

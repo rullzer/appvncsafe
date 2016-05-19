@@ -27,16 +27,66 @@ namespace OCA\Appvncsafe\AppInfo;
 $application = new Application();
 $application->registerRoutes($this, array(
 	'routes' => array(
-		array('name' => 'service#getTree', 'url' => '/tree/{name}', 'verb' => 'GET','requirements' => array('name' => '.+/')),
-		array('name' => 'service#getList', 'url' => '/list/{name}', 'verb' => 'GET','requirements' => array('name' => '.+/')),
-		array('name' => 'service#deleteFile', 'url' => '/delete/{names}', 'verb' => 'POST','requirements' => array('names' => '.+/')),
-		array('name' => 'service#getShare', 'url' => '/getshare/{path}', 'verb' => 'GET','requirements' => array('directory' => '.+/')),
-		array('name' => 'service#getSearch', 'url' => '/search/{query}', 'verb' => 'GET'),
-		array('name' => 'service#getFileExists', 'url' => '/fileexists/{file}', 'verb' => 'POST','requirements' => array('file' => '.+/')),
-		array('name' => 'service#copyFile', 'url' => '/copyfile/{source}/{destination}', 'verb' => 'POST','requirements' => array('directory' => '.+/')),
-		array('name' => 'service#moveFile', 'url' => '/movefile/{source}/{destination}', 'verb' => 'POST','requirements' => array('directory' => '.+/')),
-		array('name' => 'service#renameFile', 'url' => '/renamefile/{oldname}/{newname}/{path}', 'verb' => 'POST','requirements' => array('path' => '.+')),
-		array('name' => 'service#createFolder', 'url' => '/createfolder/{path}', 'verb' => 'GET','requirements' => array('path' => '.+/')),
-		array('name' => 'service#sendMail', 'url' => '/sendmail/{toaddress}/{link}/{type}/{expiration}', 'verb' => 'POST','requirements' => array('directory' => '.+/'))
+		array(
+			'name' => 'service#getTree',
+			'url' => '/tree/{name}',
+			'verb' => 'GET','requirements' => array('name' => '.+/')
+		),
+		array(
+			'name' => 'service#getList',
+			'url' => '/list/{name}',
+			'verb' => 'GET',
+			'requirements' => array('name' => '.+/')
+		),
+		array(
+			'name' => 'service#deleteFile',
+			'url' => '/delete/{names}',
+			'verb' => 'POST',
+			'requirements' => array('names' => '.+/')
+		),
+		array(
+			'name' => 'service#getShare',
+			'url' => '/getshare/{path}',
+			'verb' => 'GET',
+			'requirements' => array('path' => '.+/')
+		),
+		array(
+			'name' => 'service#getSearch',
+			'url' => '/search/{query}',
+			'verb' => 'GET',
+			'requirements' => array('query' => '.+')
+		),
+		array(
+			'name' => 'service#getFileExists',
+			'url' => '/fileexists/{file}',
+			'verb' => 'POST',
+			'requirements' => array('file' => '.+/')
+		),
+		array(
+			'name' => 'service#copyFile',
+			'url' => '/copyfile/{source}/{destination}',
+			'verb' => 'POST',
+			'requirements' => array('source' => '.+')
+		),
+		array(
+			'name' => 'service#moveFile',
+			'url' => '/movefile/{source}/{destination}',
+			'verb' => 'POST','requirements' => array('source' => '.+')
+		),
+		array(
+			'name' => 'service#renameFile',
+			'url' => '/renamefile/{oldname}/{newname}/{path}',
+			'verb' => 'POST','requirements' => array('path' => '.+')
+		),
+		array(
+			'name' => 'service#createFolder',
+			'url' => '/createfolder/{path}',
+			'verb' => 'GET','requirements' => array('path' => '.+/')
+		),
+		array(
+			'name' => 'service#sendMail',
+			'url' => '/sendmail/{toaddress}/{type}/{link}',
+			'verb' => 'POST','requirements' => array('link' => '.+/')
+		)
 	)
 ));
