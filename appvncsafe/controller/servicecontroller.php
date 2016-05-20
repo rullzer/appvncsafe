@@ -89,6 +89,7 @@ class ServiceController extends Controller {
 		$src = explode(",",$source);
 		$dest = str_replace('+', '\\', $destination);
 		foreach($src as $file) {
+			$file = str_replace('\\','/',$file);
 			$dfile = urldecode($file);
 			$fdest = $dest . substr($dfile, strripos($dfile, "/"));
 			if(!(\OC\Files\Filesystem::copy($dfile, $fdest))) {
@@ -105,6 +106,7 @@ class ServiceController extends Controller {
 		$src = explode(",",$source);
 		$dest = str_replace('+', '\\', $destination);
 		foreach($src as $file){
+			$file = str_replace('\\','/',$file);
 			$dfile = urldecode($file);
 			$fdest = $dest . substr($dfile, strripos($dfile, "/"));
 			if(!(\OC\Files\Filesystem::rename($dfile, $fdest))) {
