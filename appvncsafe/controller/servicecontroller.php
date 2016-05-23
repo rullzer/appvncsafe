@@ -53,7 +53,7 @@ class ServiceController extends ApiController {
 	*	@CORS
 	*/
 	public function getTree($name) {
-		return $this->encodeData($this->formatFileInfos(\OC\Files\Filesystem::getDirectoryContent($name,"httpd/unix-directory")));
+		return $this->encodeData($this->formatFileInfos(\OC\Files\Filesystem::getDirectoryContent(urldecode($name),"httpd/unix-directory")));
 	}
 
 	/**
