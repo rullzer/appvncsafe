@@ -26,17 +26,23 @@
 namespace OCA\Appvncsafe\Controller;
 
 use \OCP\IRequest;
-use \OCP\AppFramework\Controller;
+use \OCP\AppFramework\ApiController;
 use \OCP\Share;
 
-class ServiceController extends Controller {
+class ServiceController extends ApiController {
 
 	public function __construct($appName, IRequest $request) {
-		parent::__construct($appName, $request);
+		parent::__construct(
+			$appName,
+			$request,
+			'PUT, POST, GET, DELETE, PATCH',
+			'Authorization, Content-Type, Accept'
+		);
 	}
 
 	/**
 	*	@NoCSRFRequired
+	*	@CORS
 	*/
 	public function getList($name) {
 		return $this->encodeData($this->formatFileInfos(\OC\Files\Filesystem::getDirectoryContent(urldecode($name))));
@@ -44,27 +50,31 @@ class ServiceController extends Controller {
 
 	/**
 	*	@NoCSRFRequired
+	*	@CORS
 	*/
 	public function getTree($name) {
 		return $this->encodeData($this->formatFileInfos(\OC\Files\Filesystem::getDirectoryContent($name,"httpd/unix-directory")));
 	}
 
 	/**
-		* @NoCSRFRequired
+	*	@NoCSRFRequired
+	*	@CORS
 	*/
 	public function getShare($path) {
 		return $this->encodeData($this->formatFileInfo(\OC\Files\Filesystem::getFileInfo($path)));
 	}
 
 	/**
-		* @NoCSRFRequired
+	*	@NoCSRFRequired
+	*	@CORS
 	*/
 	public function getSearch($query) {
 		return $this->encodeData($this->formatFileInfos(\OC\Files\Filesystem::search($query)));
 	}
 
 	/**
-		* @NoCSRFRequired
+	*	@NoCSRFRequired
+	*	@CORS
 	*/
 	public function getFileExists($file) {
 		$fileNames  = explode(",",$file);
@@ -72,7 +82,8 @@ class ServiceController extends Controller {
 	}
 
 	/**
-		* @NoCSRFRequired
+	*	@NoCSRFRequired
+	*	@CORS
 	*/
 	public function deleteFile($names) {
 		$fileNames  = explode(",",$names);
@@ -83,7 +94,8 @@ class ServiceController extends Controller {
 	}
 
 	/**
-		* @NoCSRFRequired
+	*	@NoCSRFRequired
+	*	@CORS
 	*/
 	public function copyFile($source,$destination) {
 		$src = explode(",",$source);
@@ -100,7 +112,8 @@ class ServiceController extends Controller {
 	}
 
 	/**
-		* @NoCSRFRequired
+	*	@NoCSRFRequired
+	*	@CORS
 	*/
 	public function moveFile($source,$destination) {
 		$src = explode(",",$source);
@@ -117,7 +130,8 @@ class ServiceController extends Controller {
 	}
 
 	/**
-		* @NoCSRFRequired
+	*	@NoCSRFRequired
+	*	@CORS
 	*/
 	public function renameFile($oldname,$newname,$path) {
 		$path = urldecode($path);
@@ -132,7 +146,8 @@ class ServiceController extends Controller {
 	}
 
 	/**
-		* @NoCSRFRequired
+	*	@NoCSRFRequired
+	*	@CORS
 	*/
 	public function createFolder($path) {
 		$path = urldecode($path);
@@ -147,7 +162,8 @@ class ServiceController extends Controller {
 	}
 
 	/**
-		* @NoCSRFRequired
+	*	@NoCSRFRequired
+	*	@CORS
 	*/
 	public function sendMail($toaddress,$type,$link) {
 		$toaddressh = urldecode($toaddress);
@@ -216,7 +232,8 @@ class ServiceController extends Controller {
 	}
 
 	/**
-		* @NoCSRFRequired
+	*	@NoCSRFRequired
+	*	@CORS
 	*/
 	function formatFileInfo($fileInfo,$shareList = null) {
 		$entry = array();
@@ -269,9 +286,10 @@ class ServiceController extends Controller {
 		return $entry;
 	}
 
-    /**
-     * @NoCSRFRequired
-     */
+	/**
+	*	@NoCSRFRequired
+	*	@CORS
+	*/
 	public function formatFileInfos($fileInfos) {
 		$shareList = \OCP\Share::getItemsShared("file", \OCP\Share::FORMAT_STATUSES);
 		$files = array();
