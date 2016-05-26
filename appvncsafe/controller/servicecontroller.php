@@ -61,7 +61,7 @@ class ServiceController extends ApiController {
 	*	@CORS
 	*/
 	public function getShare($path) {
-		return $this->encodeData($this->formatFileInfo(\OC\Files\Filesystem::getFileInfo($path)));
+		return $this->encodeData($this->formatFileInfo(\OC\Files\Filesystem::getFileInfo(urldecode($path))));
 	}
 
 	/**
