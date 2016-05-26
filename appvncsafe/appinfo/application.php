@@ -42,7 +42,7 @@ class Application extends App {
          */
         $container->registerService('ServiceController', function($c) {
             return new ServiceController(
-                $c->query('appvncsafe'),
+                $c->query('ServerContainer'),
                 $c->query('Request')
             );
         });
