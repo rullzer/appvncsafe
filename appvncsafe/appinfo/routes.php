@@ -87,6 +87,11 @@ $application->registerRoutes($this, array(
 			'name' => 'service#sendMail',
 			'url' => '/sendmail/{toaddress}/{type}/{link}',
 			'verb' => 'POST','requirements' => array('link' => '.+/')
+		),
+		array(
+			'name' => 'service#getShareWithYou',
+			'url' => '/getsharewithme',
+			'verb' => 'GET','requirements' => array('link' => '.+/')
 		)
 	)
 ));

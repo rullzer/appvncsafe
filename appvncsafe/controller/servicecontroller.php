@@ -311,4 +311,45 @@ class ServiceController extends ApiController {
 			return true;
 		}
 	}
+
+	/**
+	*	@NoCSRFRequired
+	*/
+	public function getShareWithYou() {
+		$arr =  \OCP\Share::getItemsSharedWith('file');
+		$dataArray = array();
+		$version = \OCP\Util::getVersion();
+		foreach ($arr as $value) {
+			$type = '';
+			$entry = array();
+			$mimetype = \OC::$server->getMimeTypeDetector()->detectPath(substr($value['file_target'],1));
+			$mimetypeDetector = \OC::$server->getMimeTypeDetector();
+			$mimeTypeIcon = $mimetypeDetector->mimeTypeIcon($mimetype);
+			if($value['item_type']=='folder'){
+				$type = 'httpd/unix-directory';
+				$entry['mimetype'] = $type;
+			}else{
+				$type = '';
+				$entry['mimetype'] = $mimetype;
+			}
+			$entry['mountType'] = 'shared-root';
+			$entry['shareOwner'] = $value['displayname_owner'];
+			$entry['fileid'] = $value['id'];
+			$entry['parent'] = $value['parent'];
+			$entry['modifydate'] = '';
+			$entry['mtime'] = $value['stime'];
+			$entry['icon'] = $mimeTypeIcon;
+			$entry['name'] = substr($value['file_target'],1);
+			$entry['permissions'] = $value['permissions'];
+			$entry['type'] = $type;
+			$entry['size'] = '';
+			$entry['etag'] = '';
+			$entry['path'] = $value['file_target'];
+			$entry['url'] = str_replace("%2F", "/",rawurlencode($value['file_target']));
+			$entry['version'] = $version[0];
+			$dataArray [] = $entry;
+		}
+		return $dataArray;
+	}
+
 }
