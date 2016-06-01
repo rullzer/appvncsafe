@@ -91,7 +91,17 @@ $application->registerRoutes($this, array(
 		array(
 			'name' => 'service#getShareWithYou',
 			'url' => '/getsharewithme',
-			'verb' => 'GET','requirements' => array('link' => '.+/')
+			'verb' => 'GET'
+		),
+		array(
+			'name' => 'service#getShareWithOthers',
+			'url' => '/getsharewithothers',
+			'verb' => 'GET'
+		),
+		array(
+			'name' => 'service#getFavorites',
+			'url' => '/getfavorites',
+			'verb' => 'GET'
 		)
 	)
 ));

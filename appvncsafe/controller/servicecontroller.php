@@ -28,16 +28,27 @@ namespace OCA\Appvncsafe\Controller;
 use \OCP\IRequest;
 use \OCP\AppFramework\ApiController;
 use \OCP\Share;
+use \OCA\Appvncsafe\Service\TagService;
+use \OCP\Share\IManager;
+use \OCP\IUserSession;
+use \OCP\Files\Node;
 
 class ServiceController extends ApiController {
 
-	public function __construct($appName, IRequest $request) {
+	private $tagservice;
+	private $userSession;
+	private $shareManager;
+
+	public function __construct($appName, IRequest $request,$tagservice,IUserSession $userSession,IManager $shareManager) {
 		parent::__construct(
 			$appName,
 			$request,
 			'PUT, POST, GET, DELETE, PATCH',
 			'Authorization, Content-Type, Accept'
 		);
+		$this->tagservice = $tagservice;
+                $this->userSession = $userSession;
+                $this->shareManager = $shareManager;
 	}
 
 	/**
@@ -328,9 +339,11 @@ class ServiceController extends ApiController {
 			if($value['item_type']=='folder'){
 				$type = 'httpd/unix-directory';
 				$entry['mimetype'] = $type;
+				$entry['type'] = $type;
 			}else{
 				$type = '';
 				$entry['mimetype'] = $mimetype;
+				$entry['type'] = $mimetype;
 			}
 			$entry['mountType'] = 'shared-root';
 			$entry['shareOwner'] = $value['displayname_owner'];
@@ -341,15 +354,130 @@ class ServiceController extends ApiController {
 			$entry['icon'] = $mimeTypeIcon;
 			$entry['name'] = substr($value['file_target'],1);
 			$entry['permissions'] = $value['permissions'];
-			$entry['type'] = $type;
 			$entry['size'] = '';
 			$entry['etag'] = '';
 			$entry['path'] = $value['file_target'];
-			$entry['url'] = str_replace("%2F", "/",rawurlencode($value['file_target']));
+			$entry['url'] = str_replace("%2F", "/",rawurlencode($value['path']));
 			$entry['version'] = $version[0];
 			$dataArray [] = $entry;
 		}
 		return $dataArray;
 	}
 
+	/**
+	*	@NoCSRFRequired
+	*/
+	public function getShareWithOthers() {
+		$arr =  \OCP\Share::getItemShared('file', null);
+		$dataArray = array();
+		$version = \OCP\Util::getVersion();
+		foreach ($arr as $value) {
+			$type = '';
+			$entry = array();
+			$mimetype = \OC::$server->getMimeTypeDetector()->detectPath(substr($value['file_target'],1));
+			$mimetypeDetector = \OC::$server->getMimeTypeDetector();
+			$mimeTypeIcon = $mimetypeDetector->mimeTypeIcon($mimetype);
+			if($value['item_type']=='folder'){
+				$type = 'httpd/unix-directory';
+				$entry['mimetype'] = $type;
+				$entry['type'] = $type;
+			}else{
+				$type = '';
+				$entry['mimetype'] = $mimetype;
+				$entry['type'] = $mimetype;
+			}
+			$entry['mountType'] = 'shared-root';
+			$entry['shareOwner'] = $value['displayname_owner'];
+			$entry['fileid'] = $value['id'];
+			$entry['parent'] = $value['parent'];
+			$entry['modifydate'] = '';
+			$entry['mtime'] = $value['stime'];
+			$entry['icon'] = $mimeTypeIcon;
+			$entry['name'] = substr($value['file_target'],1);
+			$entry['permissions'] = $value['permissions'];
+			$entry['size'] = '';
+			$entry['etag'] = '';
+			$entry['path'] = $value['file_target'];
+			$entry['url'] = str_replace("%2F", "/",rawurlencode($value['path']));
+			$entry['version'] = $version[0];
+			$dataArray [] = $entry;
+		}
+		return $dataArray;
+	}
+
+	/**
+	*	@NoCSRFRequired
+	*/
+	public function getFavorites(){
+		$version = \OCP\Util::getVersion();
+		$names = "_%24!%3CFavorite%3E!%24_";
+		$nodes = $this->tagservice->getFilesByTag(urldecode($names));
+		$files = array();
+		$dataArray = array();
+		foreach ($nodes as &$node) {
+			$shareTypes = $this->getShareTypes($node);
+			$fileInfo = $node->getFileInfo();
+			$file = \OCA\Files\Helper::formatFileInfo($fileInfo);
+			$parts = explode('/', dirname($fileInfo->getPath()), 4);
+			if(isset($parts[3])) {
+				$file['path'] = '/' . $parts[3];
+			} else {
+				$file['path'] = '/';
+			}
+			$file['tags'] = [urldecode($names)];
+			if (!empty($shareTypes)) {
+				$file['shareTypes'] = $shareTypes;
+			}
+			$files[] = $file;
+		}
+		foreach($files as $value ){
+			$type = '';
+			$entry = array();
+			$mimetypeDetector = \OC::$server->getMimeTypeDetector();
+			$mimeTypeIcon = $mimetypeDetector->mimeTypeIcon($mimetype);
+			$entry['fileid'] = $value['id'];
+			$entry['mountType'] = 'shared-root';
+			$entry['shareOwner'] = '';
+			$entry['parent'] = $value['parentId'];
+			$entry['modifydate'] = '';
+			$entry['mtime'] = $value['mtime'];
+			$entry['icon'] = $mimeTypeIcon;
+			$entry['name'] = $value['name'];
+			$entry['permissions'] = $value['permissions'];
+			$entry['size'] = $value['size'];
+			$entry['etag'] = $value['tags'];
+			$entry['mimetype'] = $value['mimetype'];
+			$entry['type'] = $value['mimetype'];
+			$entry['path'] = $value['path'].$value['name'];
+			$entry['url'] = str_replace("%2F", "/",rawurlencode($value['path'].$value['name']));
+			$entry['version'] = $version[0];
+			$dataArray [] = $entry;
+		}
+		return $this->encodeData($dataArray);
+	}
+
+	public function getShareTypes(Node $node) {
+		$userId = $this->userSession->getUser()->getUID();
+		$shareTypes = [];
+		$requestedShareTypes = [
+			\OCP\Share::SHARE_TYPE_USER,
+			\OCP\Share::SHARE_TYPE_GROUP,
+			\OCP\Share::SHARE_TYPE_LINK,
+			\OCP\Share::SHARE_TYPE_REMOTE
+		];
+		foreach ($requestedShareTypes as $requestedShareType) {
+			// one of each type is enough to find out about the types
+			$shares = $this->shareManager->getSharesBy(
+				$userId,
+				$requestedShareType,
+				$node,
+				false,
+				1
+			);
+			if (!empty($shares)) {
+				$shareTypes[] = $requestedShareType;
+			}
+		}
+		return $shareTypes;
+	}
 }

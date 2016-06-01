@@ -27,8 +27,9 @@
 namespace OCA\Appvncsafe\AppInfo;
 
 use \OCP\AppFramework\App;
-
 use \OCA\Appvncsafe\Controller\ServiceController;
+use \OCA\Appvncsafe\Service\TagService;
+use \OCP\IContainer;
 
 
 class Application extends App {
@@ -36,17 +37,36 @@ class Application extends App {
         parent::__construct('appvncsafe', $urlParams);
 
         $container = $this->getContainer();
+	$server = $container->getServer();
 
         /**
          * Controllers
          */
-        $container->registerService('ServiceController', function($c) {
+        $container->registerService('ServiceController', function($c) use ($server) {
             return new ServiceController(
                 $c->query('ServerContainer'),
-                $c->query('Request')
+                $c->query('Request'),
+		$c->query('TagService'),
+		$server->getUserSession(),
+		$server->getShareManager()
             );
         });
-    }
+
+	/**
+		* Services
+	*/
+		$container->registerService('Tagger', function($c)  {
+			return $c->query('ServerContainer')->getTagManager()->load('files');
+		});
+		$container->registerService('TagService', function($c)  {
+			$homeFolder = $c->query('ServerContainer')->getUserFolder();
+			return new TagService(
+				$c->query('ServerContainer')->getUserSession(),
+				$c->query('Tagger'),
+				$homeFolder
+			);
+		});
+	}
 
 }
 
