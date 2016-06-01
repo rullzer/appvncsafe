@@ -102,6 +102,11 @@ $application->registerRoutes($this, array(
 			'name' => 'service#getFavorites',
 			'url' => '/getfavorites',
 			'verb' => 'GET'
+		),
+		array(
+			'name' => 'service#getShareWithLink',
+			'url' => '/getsharewithlink',
+			'verb' => 'GET'
 		)
 	)
 ));

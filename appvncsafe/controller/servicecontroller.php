@@ -463,4 +463,53 @@ class ServiceController extends ApiController {
 		}
 		return $shareTypes;
 	}
+
+	/**
+	*	@NoCSRFRequired
+	*/
+	public function getShareWithLink() {
+		$arr =  \OCP\Share::getItemShared('file', null);
+		$dataArray = array();
+		$version = \OCP\Util::getVersion();
+		foreach ($arr as $value) {
+			$type = '';
+			$entry = array();
+			if($value['share_type']==3){
+				$mimetype = \OC::$server->getMimeTypeDetector()->detectPath(substr($value['file_target'],1));
+				$mimetypeDetector = \OC::$server->getMimeTypeDetector();
+				$mimeTypeIcon = $mimetypeDetector->mimeTypeIcon($mimetype);
+				$pathInfo = preg_replace("/^files/","",$value['file_target']);
+				$entry['mountType'] = 'shared-root';
+				if($value['item_type']=='folder'){
+					$type = 'httpd/unix-directory';
+					$entry['mimetype'] = $type;
+					$entry['type'] = $type;
+				}else{
+					$type = '';
+					$entry['mimetype'] = $mimetype;
+					$entry['type'] = $mimetype;
+				}
+				if($value['share_with_displayname']==null){
+					$entry['share'] = false;
+				}else{
+					$entry['shareOwner'] = $value['share_with_displayname'];
+				}
+				$entry['fileid'] = $value['id'];
+				$entry['parent'] = $value['parent'];
+				$mtime = \OC\Files\Filesystem::filemtime($pathInfo);
+				$entry['modifydate'] = \OCP\Util::formatDate($mtime);
+				$entry['mtime'] = $value['stime'];
+				$entry['icon'] = $mimeTypeIcon;
+				$entry['name'] = substr($value['file_target'],1);
+				$entry['permissions'] = $value['permissions'];
+				$entry['size'] = \OC\Files\Filesystem::filesize($pathInfo);
+				$entry['etag'] = \OC\Files\Filesystem::getETag($pathInfo);
+				$entry['path'] = $value['file_target'];
+				$entry['url'] = str_replace("%2F", "/",rawurlencode($value['path']));
+				$entry['owversion'] = $version[0];
+				$dataArray [] = $entry;
+			}
+		}
+		return $dataArray;
+	}
 }
