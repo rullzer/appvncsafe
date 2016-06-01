@@ -188,49 +188,6 @@ class ServiceController extends ApiController {
 		return json_decode(json_encode($data, JSON_HEX_TAG));
 	}
 
-
-	function formatFileArray($fileArray) {
-		$version = \OCP\Util::getVersion();
-		$shareList = OCP\Share::getItemsShared("file", OCP\Share::FORMAT_STATUSES);
-		$dataArray = array();
-		foreach($fileArray as $fileInfo) {
-			$entry = array();
-			if (OC\Files\Filesystem::getPath($fileInfo['fileid']) == null && $fileInfo['parent']==-1) {
-				$path = $fileInfo['name'];
-				$entry['mountType'] = "external-root";
-			} else if ($fileInfo['name'] == "Shared" && $fileInfo["path"] == null) {
-				$path = "/Shared";
-			} else if ($fileInfo['usersPath']) {
-				$path = $fileInfo["usersPath"];
-				$reshare = \OCP\Share::getItemSharedWithBySource('file', $fileInfo['itemSource'], OCP\Share::FORMAT_NONE, null, true);
-				$entry['shareOwner'] = $reshare['uid_owner'];
-			} else {
-				$path = OC\Files\Filesystem::getPath($fileInfo['fileid']);
-			}
-			$path = preg_replace("/^files/","",$path);
-			$entry['fileid'] = $fileInfo['fileid'];
-			$entry['parent'] = $fileInfo['parent'];
-			$entry['modifydate'] = \OCP\Util::formatDate($fileInfo['mtime']);
-			$entry['mtime'] = $fileInfo['mtime'] * 1000;
-			$entry['name'] = $fileInfo['name'];
-			$entry['permissions'] = $fileInfo['permissions'];
-			$entry['type'] = $fileInfo['mimetype'];
-			$entry['mimetype'] = $fileInfo['mimetype'];
-			$entry['size'] = $fileInfo['size'];
-			$entry['etag'] = $fileInfo['etag'];
-			$entry['path'] = $path; 
-			$entry['url'] = str_replace("%2F", "/",rawurlencode($path));
-			if ($shareList != null) {
-				if($shareList[$fileInfo['fileid']] != null){
-					$entry['share'] = $shareList[$fileInfo['fileid']]["link"];
-				}
-			}
-			$entry['owversion'] = $version[0];
-			$dataArray[] = $entry;
-		}
-		return $dataArray;
-	}
-
 	/**
 	*	@NoCSRFRequired
 	*/
@@ -336,6 +293,20 @@ class ServiceController extends ApiController {
 			$mimetype = \OC::$server->getMimeTypeDetector()->detectPath(substr($value['file_target'],1));
 			$mimetypeDetector = \OC::$server->getMimeTypeDetector();
 			$mimeTypeIcon = $mimetypeDetector->mimeTypeIcon($mimetype);
+			$pathInfo = preg_replace("/^files/","",$value['file_target']);
+			$mountType = null;
+			$fileInfo = \OC\Files\Filesystem::getFileInfo($pathInfo);
+			if ($fileInfo->isShared()) {
+				$mountType = 'shared';
+			} else if ($fileInfo->isMounted()) {
+				$mountType = 'external';
+			}
+			if ($mountType !== null) {
+				if ($fileInfo->getInternalPath() === '') {
+					$mountType .= '-root';
+				}
+				$entry['mountType'] = $mountType;
+			}
 			if($value['item_type']=='folder'){
 				$type = 'httpd/unix-directory';
 				$entry['mimetype'] = $type;
@@ -345,17 +316,17 @@ class ServiceController extends ApiController {
 				$entry['mimetype'] = $mimetype;
 				$entry['type'] = $mimetype;
 			}
-			$entry['mountType'] = 'shared-root';
 			$entry['shareOwner'] = $value['displayname_owner'];
 			$entry['fileid'] = $value['id'];
 			$entry['parent'] = $value['parent'];
-			$entry['modifydate'] = '';
+			$mtime = \OC\Files\Filesystem::filemtime($pathInfo);
+			$entry['modifydate'] = \OCP\Util::formatDate($mtime);
 			$entry['mtime'] = $value['stime'];
 			$entry['icon'] = $mimeTypeIcon;
 			$entry['name'] = substr($value['file_target'],1);
 			$entry['permissions'] = $value['permissions'];
-			$entry['size'] = '';
-			$entry['etag'] = '';
+			$entry['size'] = \OC\Files\Filesystem::filesize($pathInfo);
+			$entry['etag'] = \OC\Files\Filesystem::getETag($pathInfo);
 			$entry['path'] = $value['file_target'];
 			$entry['url'] = str_replace("%2F", "/",rawurlencode($value['path']));
 			$entry['version'] = $version[0];
@@ -377,6 +348,8 @@ class ServiceController extends ApiController {
 			$mimetype = \OC::$server->getMimeTypeDetector()->detectPath(substr($value['file_target'],1));
 			$mimetypeDetector = \OC::$server->getMimeTypeDetector();
 			$mimeTypeIcon = $mimetypeDetector->mimeTypeIcon($mimetype);
+			$pathInfo = preg_replace("/^files/","",$value['file_target']);
+			$entry['mountType'] = 'shared-root';
 			if($value['item_type']=='folder'){
 				$type = 'httpd/unix-directory';
 				$entry['mimetype'] = $type;
@@ -386,17 +359,17 @@ class ServiceController extends ApiController {
 				$entry['mimetype'] = $mimetype;
 				$entry['type'] = $mimetype;
 			}
-			$entry['mountType'] = 'shared-root';
 			$entry['shareOwner'] = $value['displayname_owner'];
 			$entry['fileid'] = $value['id'];
 			$entry['parent'] = $value['parent'];
-			$entry['modifydate'] = '';
+			$mtime = \OC\Files\Filesystem::filemtime($pathInfo);
+			$entry['modifydate'] = \OCP\Util::formatDate($mtime);
 			$entry['mtime'] = $value['stime'];
 			$entry['icon'] = $mimeTypeIcon;
 			$entry['name'] = substr($value['file_target'],1);
 			$entry['permissions'] = $value['permissions'];
-			$entry['size'] = '';
-			$entry['etag'] = '';
+			$entry['size'] = \OC\Files\Filesystem::filesize($pathInfo);
+			$entry['etag'] = \OC\Files\Filesystem::getETag($pathInfo);
 			$entry['path'] = $value['file_target'];
 			$entry['url'] = str_replace("%2F", "/",rawurlencode($value['path']));
 			$entry['version'] = $version[0];
@@ -435,11 +408,13 @@ class ServiceController extends ApiController {
 			$entry = array();
 			$mimetypeDetector = \OC::$server->getMimeTypeDetector();
 			$mimeTypeIcon = $mimetypeDetector->mimeTypeIcon($mimetype);
+			$pathInfo = preg_replace("/^files/","",$value['path'].$value['name']);
+			$mtime = \OC\Files\Filesystem::filemtime($pathInfo);
 			$entry['fileid'] = $value['id'];
 			$entry['mountType'] = 'shared-root';
 			$entry['shareOwner'] = '';
 			$entry['parent'] = $value['parentId'];
-			$entry['modifydate'] = '';
+			$entry['modifydate'] = \OCP\Util::formatDate($mtime);
 			$entry['mtime'] = $value['mtime'];
 			$entry['icon'] = $mimeTypeIcon;
 			$entry['name'] = $value['name'];
