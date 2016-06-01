@@ -328,8 +328,8 @@ class ServiceController extends ApiController {
 			$entry['size'] = \OC\Files\Filesystem::filesize($pathInfo);
 			$entry['etag'] = \OC\Files\Filesystem::getETag($pathInfo);
 			$entry['path'] = $value['file_target'];
-			$entry['url'] = str_replace("%2F", "/",rawurlencode($value['path']));
-			$entry['version'] = $version[0];
+			$entry['url'] = str_replace("%2F", "/",rawurlencode($value['file_target']));
+			$entry['owversion'] = $version[0];
 			$dataArray [] = $entry;
 		}
 		return $dataArray;
@@ -359,7 +359,11 @@ class ServiceController extends ApiController {
 				$entry['mimetype'] = $mimetype;
 				$entry['type'] = $mimetype;
 			}
-			$entry['shareOwner'] = $value['displayname_owner'];
+			if($value['share_with_displayname']==null){
+				$entry['share'] = false;
+			}else{
+			$entry['shareOwner'] = $value['share_with_displayname'];
+			}
 			$entry['fileid'] = $value['id'];
 			$entry['parent'] = $value['parent'];
 			$mtime = \OC\Files\Filesystem::filemtime($pathInfo);
@@ -372,7 +376,7 @@ class ServiceController extends ApiController {
 			$entry['etag'] = \OC\Files\Filesystem::getETag($pathInfo);
 			$entry['path'] = $value['file_target'];
 			$entry['url'] = str_replace("%2F", "/",rawurlencode($value['path']));
-			$entry['version'] = $version[0];
+			$entry['owversion'] = $version[0];
 			$dataArray [] = $entry;
 		}
 		return $dataArray;
@@ -412,7 +416,11 @@ class ServiceController extends ApiController {
 			$mtime = \OC\Files\Filesystem::filemtime($pathInfo);
 			$entry['fileid'] = $value['id'];
 			$entry['mountType'] = 'shared-root';
-			$entry['shareOwner'] = '';
+			if($value['shareOwner']){
+				$entry['shareOwner'] = $value['shareOwner'];
+			}else{
+				$entry['share'] = false;
+			}
 			$entry['parent'] = $value['parentId'];
 			$entry['modifydate'] = \OCP\Util::formatDate($mtime);
 			$entry['mtime'] = $value['mtime'];
@@ -425,7 +433,7 @@ class ServiceController extends ApiController {
 			$entry['type'] = $value['mimetype'];
 			$entry['path'] = $value['path'].$value['name'];
 			$entry['url'] = str_replace("%2F", "/",rawurlencode($value['path'].$value['name']));
-			$entry['version'] = $version[0];
+			$entry['owversion'] = $version[0];
 			$dataArray [] = $entry;
 		}
 		return $this->encodeData($dataArray);
