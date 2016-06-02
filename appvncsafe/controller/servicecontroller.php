@@ -415,10 +415,7 @@ class ServiceController extends ApiController {
 			$pathInfo = preg_replace("/^files/","",$value['path'].$value['name']);
 			$mtime = \OC\Files\Filesystem::filemtime($pathInfo);
 			$entry['fileid'] = $value['id'];
-			$entry['mountType'] = 'shared-root';
-			if($value['shareOwner']){
-				$entry['shareOwner'] = $value['shareOwner'];
-			}else{
+			if($value['shareTypes']){
 				$entry['share'] = false;
 			}
 			$entry['parent'] = $value['parentId'];
