@@ -47,8 +47,7 @@ class Application extends App {
                 $c->query('ServerContainer'),
                 $c->query('Request'),
 		$c->query('TagService'),
-		$server->getUserSession(),
-		$server->getShareManager()
+		$server->getUserSession()
             );
         });
 

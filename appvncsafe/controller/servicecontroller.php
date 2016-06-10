@@ -29,7 +29,6 @@ use \OCP\IRequest;
 use \OCP\AppFramework\ApiController;
 use \OCP\Share;
 use \OCA\Appvncsafe\Service\TagService;
-use \OCP\Share\IManager;
 use \OCP\IUserSession;
 use \OCP\Files\Node;
 
@@ -37,9 +36,8 @@ class ServiceController extends ApiController {
 
 	private $tagservice;
 	private $userSession;
-	private $shareManager;
 
-	public function __construct($appName, IRequest $request,$tagservice,IUserSession $userSession,IManager $shareManager) {
+	public function __construct($appName, IRequest $request,$tagservice,IUserSession $userSession) {
 		parent::__construct(
 			$appName,
 			$request,
@@ -48,7 +46,6 @@ class ServiceController extends ApiController {
 		);
 		$this->tagservice = $tagservice;
                 $this->userSession = $userSession;
-                $this->shareManager = $shareManager;
 	}
 
 	/**
@@ -182,9 +179,9 @@ class ServiceController extends ApiController {
 	}
 
 	private function encodeData($data) {
-		if (is_array($data)) {
+		/*if (is_array($data)) {
 			array_walk_recursive($data, array('OC_JSON', 'to_string'));
-		}
+		}*/
 		return json_decode(json_encode($data, JSON_HEX_TAG));
 	}
 
@@ -290,9 +287,9 @@ class ServiceController extends ApiController {
 		foreach ($arr as $value) {
 			$type = '';
 			$entry = array();
-			$mimetype = \OC::$server->getMimeTypeDetector()->detectPath(substr($value['file_target'],1));
-			$mimetypeDetector = \OC::$server->getMimeTypeDetector();
-			$mimeTypeIcon = $mimetypeDetector->mimeTypeIcon($mimetype);
+			$mimetype = \OC\Files\Filesystem::getMimeType(substr($value['file_target'],1));
+			$fileInfo = \OC\Files\Filesystem::getFileInfo($value['file_target']);
+			$mimeTypeIcon = \OCA\Files\Helper::determineIcon($fileInfo);
 			$pathInfo = preg_replace("/^files/","",$value['file_target']);
 			$mountType = null;
 			$fileInfo = \OC\Files\Filesystem::getFileInfo($pathInfo);
@@ -345,9 +342,9 @@ class ServiceController extends ApiController {
 		foreach ($arr as $value) {
 			$type = '';
 			$entry = array();
-			$mimetype = \OC::$server->getMimeTypeDetector()->detectPath(substr($value['file_target'],1));
-			$mimetypeDetector = \OC::$server->getMimeTypeDetector();
-			$mimeTypeIcon = $mimetypeDetector->mimeTypeIcon($mimetype);
+			$mimetype = \OC\Files\Filesystem::getMimeType(substr($value['file_target'],1));
+			$fileInfo = \OC\Files\Filesystem::getFileInfo($value['file_target']);
+			$mimeTypeIcon = \OCA\Files\Helper::determineIcon($fileInfo);
 			$pathInfo = preg_replace("/^files/","",$value['file_target']);
 			$entry['mountType'] = 'shared-root';
 			if($value['item_type']=='folder'){
@@ -392,7 +389,6 @@ class ServiceController extends ApiController {
 		$files = array();
 		$dataArray = array();
 		foreach ($nodes as &$node) {
-			$shareTypes = $this->getShareTypes($node);
 			$fileInfo = $node->getFileInfo();
 			$file = \OCA\Files\Helper::formatFileInfo($fileInfo);
 			$parts = explode('/', dirname($fileInfo->getPath()), 4);
@@ -410,8 +406,8 @@ class ServiceController extends ApiController {
 		foreach($files as $value ){
 			$type = '';
 			$entry = array();
-			$mimetypeDetector = \OC::$server->getMimeTypeDetector();
-			$mimeTypeIcon = $mimetypeDetector->mimeTypeIcon($mimetype);
+			$fileInfo = \OC\Files\Filesystem::getFileInfo($value['path'].$value['name']);
+			$mimeTypeIcon = \OCA\Files\Helper::determineIcon($fileInfo);
 			$pathInfo = preg_replace("/^files/","",$value['path'].$value['name']);
 			$mtime = \OC\Files\Filesystem::filemtime($pathInfo);
 			$entry['fileid'] = $value['id'];
@@ -436,31 +432,6 @@ class ServiceController extends ApiController {
 		return $this->encodeData($dataArray);
 	}
 
-	public function getShareTypes(Node $node) {
-		$userId = $this->userSession->getUser()->getUID();
-		$shareTypes = [];
-		$requestedShareTypes = [
-			\OCP\Share::SHARE_TYPE_USER,
-			\OCP\Share::SHARE_TYPE_GROUP,
-			\OCP\Share::SHARE_TYPE_LINK,
-			\OCP\Share::SHARE_TYPE_REMOTE
-		];
-		foreach ($requestedShareTypes as $requestedShareType) {
-			// one of each type is enough to find out about the types
-			$shares = $this->shareManager->getSharesBy(
-				$userId,
-				$requestedShareType,
-				$node,
-				false,
-				1
-			);
-			if (!empty($shares)) {
-				$shareTypes[] = $requestedShareType;
-			}
-		}
-		return $shareTypes;
-	}
-
 	/**
 	*	@NoCSRFRequired
 	*/
@@ -472,9 +443,9 @@ class ServiceController extends ApiController {
 			$type = '';
 			$entry = array();
 			if($value['share_type']==3){
-				$mimetype = \OC::$server->getMimeTypeDetector()->detectPath(substr($value['file_target'],1));
-				$mimetypeDetector = \OC::$server->getMimeTypeDetector();
-				$mimeTypeIcon = $mimetypeDetector->mimeTypeIcon($mimetype);
+				$mimetype = \OC\Files\Filesystem::getMimeType(substr($value['file_target'],1));
+				$fileInfo = \OC\Files\Filesystem::getFileInfo($value['file_target']);
+				$mimeTypeIcon = \OCA\Files\Helper::determineIcon($fileInfo);
 				$pathInfo = preg_replace("/^files/","",$value['file_target']);
 				$entry['mountType'] = 'shared-root';
 				if($value['item_type']=='folder'){
