@@ -287,7 +287,7 @@ class ServiceController extends ApiController {
 		foreach ($arr as $value) {
 			$type = '';
 			$entry = array();
-			$mimetype = \OC\Files\Filesystem::getMimeType(substr($value['file_target'],1));
+			$mimetype = \OC\Files\Filesystem::getMimeType($value['path']);
 			$mimeTypeIcon = \OC_Helper::mimetypeIcon($mimetype);
 			$pathInfo = preg_replace("/^files/","",$value['file_target']);
 			$mountType = null;
@@ -308,7 +308,7 @@ class ServiceController extends ApiController {
 			$entry['modifydate'] = \OCP\Util::formatDate($mtime);
 			$entry['mtime'] = $value['stime'];
 			$entry['icon'] = $mimeTypeIcon;
-			$entry['name'] = substr($value['file_target'],1);
+			$entry['name'] = basename($value['path']);
 			$entry['permissions'] = $value['permissions'];
 			$entry['size'] = \OC\Files\Filesystem::filesize($pathInfo);
 			$entry['etag'] = \OC\Files\Filesystem::getETag($pathInfo);
@@ -330,7 +330,7 @@ class ServiceController extends ApiController {
 		foreach ($arr as $value) {
 			$type = '';
 			$entry = array();
-			$mimetype = \OC\Files\Filesystem::getMimeType(substr($value['file_target'],1));
+			$mimetype = \OC\Files\Filesystem::getMimeType($value['path']);
 			$mimeTypeIcon = \OC_Helper::mimetypeIcon($mimetype);
 			$pathInfo = preg_replace("/^files/","",$value['file_target']);
 			$entry['mountType'] = 'shared-root';
@@ -354,7 +354,7 @@ class ServiceController extends ApiController {
 			$entry['modifydate'] = \OCP\Util::formatDate($mtime);
 			$entry['mtime'] = $value['stime'];
 			$entry['icon'] = $mimeTypeIcon;
-			$entry['name'] = substr($value['file_target'],1);
+			$entry['name'] = basename($value['path']);
 			$entry['permissions'] = $value['permissions'];
 			$entry['size'] = \OC\Files\Filesystem::filesize($pathInfo);
 			$entry['etag'] = \OC\Files\Filesystem::getETag($pathInfo);
@@ -430,7 +430,7 @@ class ServiceController extends ApiController {
 			$type = '';
 			$entry = array();
 			if($value['share_type']==3){
-				$mimetype = \OC\Files\Filesystem::getMimeType(substr($value['file_target'],1));
+				$mimetype = \OC\Files\Filesystem::getMimeType($value['path']);
 				$mimeTypeIcon = \OC_Helper::mimetypeIcon($mimetype);
 				$pathInfo = preg_replace("/^files/","",$value['file_target']);
 				$entry['mountType'] = 'shared-root';
@@ -454,7 +454,7 @@ class ServiceController extends ApiController {
 				$entry['modifydate'] = \OCP\Util::formatDate($mtime);
 				$entry['mtime'] = $value['stime'];
 				$entry['icon'] = $mimeTypeIcon;
-				$entry['name'] = substr($value['file_target'],1);
+				$entry['name'] = basename($value['path']);
 				$entry['permissions'] = $value['permissions'];
 				$entry['size'] = \OC\Files\Filesystem::filesize($pathInfo);
 				$entry['etag'] = \OC\Files\Filesystem::getETag($pathInfo);
