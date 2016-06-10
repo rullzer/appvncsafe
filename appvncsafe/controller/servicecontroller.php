@@ -288,22 +288,10 @@ class ServiceController extends ApiController {
 			$type = '';
 			$entry = array();
 			$mimetype = \OC\Files\Filesystem::getMimeType(substr($value['file_target'],1));
-			$fileInfo = \OC\Files\Filesystem::getFileInfo($value['file_target']);
-			$mimeTypeIcon = \OCA\Files\Helper::determineIcon($fileInfo);
+			$mimeTypeIcon = \OC_Helper::mimetypeIcon($mimetype);
 			$pathInfo = preg_replace("/^files/","",$value['file_target']);
 			$mountType = null;
-			$fileInfo = \OC\Files\Filesystem::getFileInfo($pathInfo);
-			if ($fileInfo->isShared()) {
-				$mountType = 'shared';
-			} else if ($fileInfo->isMounted()) {
-				$mountType = 'external';
-			}
-			if ($mountType !== null) {
-				if ($fileInfo->getInternalPath() === '') {
-					$mountType .= '-root';
-				}
-				$entry['mountType'] = $mountType;
-			}
+			$entry['mountType'] = 'shared-root';
 			if($value['item_type']=='folder'){
 				$type = 'httpd/unix-directory';
 				$entry['mimetype'] = $type;
@@ -343,8 +331,7 @@ class ServiceController extends ApiController {
 			$type = '';
 			$entry = array();
 			$mimetype = \OC\Files\Filesystem::getMimeType(substr($value['file_target'],1));
-			$fileInfo = \OC\Files\Filesystem::getFileInfo($value['file_target']);
-			$mimeTypeIcon = \OCA\Files\Helper::determineIcon($fileInfo);
+			$mimeTypeIcon = \OC_Helper::mimetypeIcon($mimetype);
 			$pathInfo = preg_replace("/^files/","",$value['file_target']);
 			$entry['mountType'] = 'shared-root';
 			if($value['item_type']=='folder'){
@@ -444,8 +431,7 @@ class ServiceController extends ApiController {
 			$entry = array();
 			if($value['share_type']==3){
 				$mimetype = \OC\Files\Filesystem::getMimeType(substr($value['file_target'],1));
-				$fileInfo = \OC\Files\Filesystem::getFileInfo($value['file_target']);
-				$mimeTypeIcon = \OCA\Files\Helper::determineIcon($fileInfo);
+				$mimeTypeIcon = \OC_Helper::mimetypeIcon($mimetype);
 				$pathInfo = preg_replace("/^files/","",$value['file_target']);
 				$entry['mountType'] = 'shared-root';
 				if($value['item_type']=='folder'){
