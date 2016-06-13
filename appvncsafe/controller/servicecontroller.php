@@ -388,33 +388,8 @@ class ServiceController extends ApiController {
 			if (!empty($shareTypes)) {
 				$file['shareTypes'] = $shareTypes;
 			}
-			$files[] = $file;
-		}
-		foreach($files as $value ){
-			$type = '';
-			$entry = array();
-			$fileInfo = \OC\Files\Filesystem::getFileInfo($value['path'].$value['name']);
-			$mimeTypeIcon = \OC_Helper::mimetypeIcon($value['mimetype']);
-			$pathInfo = preg_replace("/^files/","",$value['path'].$value['name']);
-			$mtime = \OC\Files\Filesystem::filemtime($pathInfo);
-			$entry['fileid'] = $value['id'];
-			if($value['shareTypes']){
-				$entry['share'] = false;
-			}
-			$entry['parent'] = $value['parentId'];
-			$entry['modifydate'] = \OCP\Util::formatDate($mtime);
-			$entry['mtime'] = $value['mtime'];
-			$entry['icon'] = $mimeTypeIcon;
-			$entry['name'] = $value['name'];
-			$entry['permissions'] = $value['permissions'];
-			$entry['size'] = $value['size'];
-			$entry['etag'] = $value['tags'];
-			$entry['mimetype'] = $value['mimetype'];
-			$entry['type'] = $value['mimetype'];
-			$entry['path'] = $value['path'].$value['name'];
-			$entry['url'] = str_replace("%2F", "/",rawurlencode($value['path'].$value['name']));
-			$entry['owversion'] = $version[0];
-			$dataArray [] = $entry;
+			$shareList = \OCP\Share::getItemsShared("file", \OCP\Share::FORMAT_STATUSES);
+			$dataArray [] = $this->formatFileInfo($fileInfo,$shareList);
 		}
 		return $this->encodeData($dataArray);
 	}
