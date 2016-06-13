@@ -50,6 +50,7 @@ class ServiceController extends ApiController {
 
 	/**
 	*	@NoCSRFRequired
+	*	@NoAdminRequired
 	*/
 	public function getList($name) {
 		return $this->encodeData($this->formatFileInfos(\OC\Files\Filesystem::getDirectoryContent(urldecode($name))));
@@ -57,6 +58,7 @@ class ServiceController extends ApiController {
 
 	/**
 	*	@NoCSRFRequired
+	*	@NoAdminRequired
 	*/
 	public function getTree($name) {
 		return $this->encodeData($this->formatFileInfos(\OC\Files\Filesystem::getDirectoryContent(urldecode($name),"httpd/unix-directory")));
@@ -64,6 +66,7 @@ class ServiceController extends ApiController {
 
 	/**
 	*	@NoCSRFRequired
+	*	@NoAdminRequired
 	*/
 	public function getShare($path) {
 		return $this->encodeData($this->formatFileInfo(\OC\Files\Filesystem::getFileInfo(urldecode($path))));
@@ -71,6 +74,7 @@ class ServiceController extends ApiController {
 
 	/**
 	*	@NoCSRFRequired
+	*	@NoAdminRequired
 	*/
 	public function getSearch($query) {
 		return $this->encodeData($this->formatFileInfos(\OC\Files\Filesystem::search($query)));
@@ -78,6 +82,7 @@ class ServiceController extends ApiController {
 
 	/**
 	*	@NoCSRFRequired
+	*	@NoAdminRequired
 	*/
 	public function getFileExists($file) {
 		$fileNames  = explode(",",$file);
@@ -86,6 +91,7 @@ class ServiceController extends ApiController {
 
 	/**
 	*	@NoCSRFRequired
+	*	@NoAdminRequired
 	*/
 	public function deleteFile($names) {
 		$fileNames  = explode(",",$names);
@@ -97,6 +103,7 @@ class ServiceController extends ApiController {
 
 	/**
 	*	@NoCSRFRequired
+	*	@NoAdminRequired
 	*/
 	public function copyFile($source,$destination) {
 		$src = explode(",",$source);
@@ -114,6 +121,7 @@ class ServiceController extends ApiController {
 
 	/**
 	*	@NoCSRFRequired
+	*	@NoAdminRequired
 	*/
 	public function moveFile($source,$destination) {
 		$src = explode(",",$source);
@@ -131,6 +139,7 @@ class ServiceController extends ApiController {
 
 	/**
 	*	@NoCSRFRequired
+	*	@NoAdminRequired
 	*/
 	public function renameFile($oldname,$newname,$path) {
 		$path = urldecode($path);
@@ -146,6 +155,7 @@ class ServiceController extends ApiController {
 
 	/**
 	*	@NoCSRFRequired
+	*	@NoAdminRequired
 	*/
 	public function createFolder($path) {
 		$path = urldecode($path);
@@ -161,6 +171,7 @@ class ServiceController extends ApiController {
 
 	/**
 	*	@NoCSRFRequired
+	*	@NoAdminRequired
 	*/
 	public function sendMail($toaddress,$type,$link) {
 		$toaddressh = urldecode($toaddress);
@@ -187,6 +198,7 @@ class ServiceController extends ApiController {
 
 	/**
 	*	@NoCSRFRequired
+	*	@NoAdminRequired
 	*/
 	function formatFileInfo($fileInfo,$shareList = null) {
 		$entry = array();
@@ -241,6 +253,7 @@ class ServiceController extends ApiController {
 
 	/**
 	*	@NoCSRFRequired
+	*	@NoAdminRequired
 	*/
 	public function formatFileInfos($fileInfos) {
 		$shareList = \OCP\Share::getItemsShared("file", \OCP\Share::FORMAT_STATUSES);
@@ -279,6 +292,7 @@ class ServiceController extends ApiController {
 
 	/**
 	*	@NoCSRFRequired
+	*	@NoAdminRequired
 	*/
 	public function getShareWithYou() {
 		$arr =  \OCP\Share::getItemsSharedWith('file');
@@ -322,6 +336,7 @@ class ServiceController extends ApiController {
 
 	/**
 	*	@NoCSRFRequired
+	*	@NoAdminRequired
 	*/
 	public function getShareWithOthers() {
 		$arr =  \OCP\Share::getItemShared('file', null);
@@ -368,6 +383,7 @@ class ServiceController extends ApiController {
 
 	/**
 	*	@NoCSRFRequired
+	*	@NoAdminRequired
 	*/
 	public function getFavorites(){
 		$version = \OCP\Util::getVersion();
@@ -396,6 +412,7 @@ class ServiceController extends ApiController {
 
 	/**
 	*	@NoCSRFRequired
+	*	@NoAdminRequired
 	*/
 	public function getShareWithLink() {
 		$arr =  \OCP\Share::getItemShared('file', null);
