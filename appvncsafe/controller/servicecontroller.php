@@ -310,7 +310,7 @@ class ServiceController extends ApiController {
 			$entry['icon'] = $mimeTypeIcon;
 			$entry['name'] = basename($value['path']);
 			$entry['permissions'] = $value['permissions'];
-			$entry['size'] = \OC\Files\Filesystem::filesize($pathInfo);
+			$entry['size'] = \OC\Files\Filesystem::filesize($value['path']);
 			$entry['etag'] = \OC\Files\Filesystem::getETag($pathInfo);
 			$entry['path'] = $value['file_target'];
 			$entry['url'] = str_replace("%2F", "/",rawurlencode($value['file_target']));
@@ -356,7 +356,7 @@ class ServiceController extends ApiController {
 			$entry['icon'] = $mimeTypeIcon;
 			$entry['name'] = basename($value['path']);
 			$entry['permissions'] = $value['permissions'];
-			$entry['size'] = \OC\Files\Filesystem::filesize($pathInfo);
+			$entry['size'] = \OC\Files\Filesystem::filesize($value['path']);
 			$entry['etag'] = \OC\Files\Filesystem::getETag($pathInfo);
 			$entry['path'] = $value['file_target'];
 			$entry['url'] = str_replace("%2F", "/",rawurlencode($value['path']));
@@ -394,7 +394,7 @@ class ServiceController extends ApiController {
 			$type = '';
 			$entry = array();
 			$fileInfo = \OC\Files\Filesystem::getFileInfo($value['path'].$value['name']);
-			$mimeTypeIcon = \OCA\Files\Helper::determineIcon($fileInfo);
+			$mimeTypeIcon = \OC_Helper::mimetypeIcon($value['mimetype']);
 			$pathInfo = preg_replace("/^files/","",$value['path'].$value['name']);
 			$mtime = \OC\Files\Filesystem::filemtime($pathInfo);
 			$entry['fileid'] = $value['id'];
@@ -456,7 +456,7 @@ class ServiceController extends ApiController {
 				$entry['icon'] = $mimeTypeIcon;
 				$entry['name'] = basename($value['path']);
 				$entry['permissions'] = $value['permissions'];
-				$entry['size'] = \OC\Files\Filesystem::filesize($pathInfo);
+				$entry['size'] = \OC\Files\Filesystem::filesize($value['path']);
 				$entry['etag'] = \OC\Files\Filesystem::getETag($pathInfo);
 				$entry['path'] = $value['file_target'];
 				$entry['url'] = str_replace("%2F", "/",rawurlencode($value['path']));
