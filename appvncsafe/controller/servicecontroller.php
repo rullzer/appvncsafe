@@ -302,7 +302,11 @@ class ServiceController extends ApiController {
 			$type = '';
 			$entry = array();
 			$mimetype = \OC\Files\Filesystem::getMimeType($value['path']);
-			$mimeTypeIcon = \OC_Helper::mimetypeIcon($mimetype);
+			if($version[0]==8){
+				$mimeTypeIcon = \OC_Helper::mimetypeIcon($mimetype);
+			}else{
+				$mimeTypeIcon = \OC::$server->getMimeTypeDetector()->mimeTypeIcon($mimetype);
+			}
 			$pathInfo = preg_replace("/^files/","",$value['file_target']);
 			$mountType = null;
 			$entry['mountType'] = 'shared-root';
@@ -346,7 +350,11 @@ class ServiceController extends ApiController {
 			$type = '';
 			$entry = array();
 			$mimetype = \OC\Files\Filesystem::getMimeType($value['path']);
-			$mimeTypeIcon = \OC_Helper::mimetypeIcon($mimetype);
+			if($version[0]==8){
+				$mimeTypeIcon = \OC_Helper::mimetypeIcon($mimetype);
+			}else{
+				$mimeTypeIcon = \OC::$server->getMimeTypeDetector()->mimeTypeIcon($mimetype);
+			}
 			$pathInfo = preg_replace("/^files/","",$value['file_target']);
 			$entry['mountType'] = 'shared-root';
 			if($value['item_type']=='folder'){
@@ -423,7 +431,11 @@ class ServiceController extends ApiController {
 			$entry = array();
 			if($value['share_type']==3){
 				$mimetype = \OC\Files\Filesystem::getMimeType($value['path']);
-				$mimeTypeIcon = \OC_Helper::mimetypeIcon($mimetype);
+				if($version[0]==8){
+					$mimeTypeIcon = \OC_Helper::mimetypeIcon($mimetype);
+				}else{
+					$mimeTypeIcon = \OC::$server->getMimeTypeDetector()->mimeTypeIcon($mimetype);
+				}
 				$pathInfo = preg_replace("/^files/","",$value['file_target']);
 				$entry['mountType'] = 'shared-root';
 				if($value['item_type']=='folder'){
