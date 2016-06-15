@@ -299,41 +299,14 @@ class ServiceController extends ApiController {
 		$dataArray = array();
 		$version = \OCP\Util::getVersion();
 		foreach ($arr as $value) {
-			$type = '';
-			$entry = array();
-			$mimetype = \OC\Files\Filesystem::getMimeType($value['path']);
-			if($version[0]==8){
-				$mimeTypeIcon = \OC_Helper::mimetypeIcon($mimetype);
-			}else{
-				$mimeTypeIcon = \OC::$server->getMimeTypeDetector()->mimeTypeIcon($mimetype);
-			}
-			$pathInfo = preg_replace("/^files/","",$value['file_target']);
-			$mountType = null;
-			$entry['mountType'] = 'shared-root';
-			if($value['item_type']=='folder'){
-				$type = 'httpd/unix-directory';
-				$entry['mimetype'] = $type;
-				$entry['type'] = $type;
-			}else{
-				$type = '';
-				$entry['mimetype'] = $mimetype;
-				$entry['type'] = $mimetype;
-			}
-			$entry['shareOwner'] = $value['displayname_owner'];
-			$entry['fileid'] = $value['id'];
-			$entry['parent'] = $value['parent'];
-			$mtime = \OC\Files\Filesystem::filemtime($pathInfo);
-			$entry['modifydate'] = \OCP\Util::formatDate($mtime);
-			$entry['mtime'] = $value['stime'];
-			$entry['icon'] = $mimeTypeIcon;
-			$entry['name'] = basename($value['path']);
-			$entry['permissions'] = $value['permissions'];
-			$entry['size'] = \OC\Files\Filesystem::filesize($value['path']);
-			$entry['etag'] = \OC\Files\Filesystem::getETag($pathInfo);
-			$entry['path'] = $value['file_target'];
-			$entry['url'] = str_replace("%2F", "/",rawurlencode($value['file_target']));
-			$entry['owversion'] = $version[0];
-			$dataArray [] = $entry;
+			$userId = $value['displayname_owner'];
+			\OC\Files\Filesystem::initMountPoints($userId);
+			$view = new \OC\Files\View('/' . $userId . '/files');
+			$pathId = $value['file_source'];
+			$path = $view->getPath($pathId);
+			$pathInfo = $view->getFileInfo($path);
+			$shareList = \OCP\Share::getItemsShared("file", \OCP\Share::FORMAT_STATUSES);
+			$dataArray [] = $this->formatFileInfo($pathInfo,$shareList);
 		}
 		return $dataArray;
 	}
@@ -347,44 +320,14 @@ class ServiceController extends ApiController {
 		$dataArray = array();
 		$version = \OCP\Util::getVersion();
 		foreach ($arr as $value) {
-			$type = '';
-			$entry = array();
-			$mimetype = \OC\Files\Filesystem::getMimeType($value['path']);
-			if($version[0]==8){
-				$mimeTypeIcon = \OC_Helper::mimetypeIcon($mimetype);
-			}else{
-				$mimeTypeIcon = \OC::$server->getMimeTypeDetector()->mimeTypeIcon($mimetype);
-			}
-			$pathInfo = preg_replace("/^files/","",$value['file_target']);
-			$entry['mountType'] = 'shared-root';
-			if($value['item_type']=='folder'){
-				$type = 'httpd/unix-directory';
-				$entry['mimetype'] = $type;
-				$entry['type'] = $type;
-			}else{
-				$type = '';
-				$entry['mimetype'] = $mimetype;
-				$entry['type'] = $mimetype;
-			}
-			if($value['share_with_displayname']==null){
-				$entry['share'] = false;
-			}else{
-			$entry['shareOwner'] = $value['share_with_displayname'];
-			}
-			$entry['fileid'] = $value['id'];
-			$entry['parent'] = $value['parent'];
-			$mtime = \OC\Files\Filesystem::filemtime($pathInfo);
-			$entry['modifydate'] = \OCP\Util::formatDate($mtime);
-			$entry['mtime'] = $value['stime'];
-			$entry['icon'] = $mimeTypeIcon;
-			$entry['name'] = basename($value['path']);
-			$entry['permissions'] = $value['permissions'];
-			$entry['size'] = \OC\Files\Filesystem::filesize($value['path']);
-			$entry['etag'] = \OC\Files\Filesystem::getETag($pathInfo);
-			$entry['path'] = $value['file_target'];
-			$entry['url'] = str_replace("%2F", "/",rawurlencode($value['path']));
-			$entry['owversion'] = $version[0];
-			$dataArray [] = $entry;
+			$userId = $this->userSession->getLoginName();
+			\OC\Files\Filesystem::initMountPoints($userId);
+			$view = new \OC\Files\View('/' . $userId . '/files');
+			$pathId = $value['file_source'];
+			$path = $view->getPath($pathId);
+			$pathInfo = $view->getFileInfo($path);
+			$shareList = \OCP\Share::getItemsShared("file", \OCP\Share::FORMAT_STATUSES);
+			$dataArray [] = $this->formatFileInfo($pathInfo,$shareList);
 		}
 		return $dataArray;
 	}
@@ -430,42 +373,15 @@ class ServiceController extends ApiController {
 			$type = '';
 			$entry = array();
 			if($value['share_type']==3){
-				$mimetype = \OC\Files\Filesystem::getMimeType($value['path']);
-				if($version[0]==8){
-					$mimeTypeIcon = \OC_Helper::mimetypeIcon($mimetype);
-				}else{
-					$mimeTypeIcon = \OC::$server->getMimeTypeDetector()->mimeTypeIcon($mimetype);
-				}
-				$pathInfo = preg_replace("/^files/","",$value['file_target']);
-				$entry['mountType'] = 'shared-root';
-				if($value['item_type']=='folder'){
-					$type = 'httpd/unix-directory';
-					$entry['mimetype'] = $type;
-					$entry['type'] = $type;
-				}else{
-					$type = '';
-					$entry['mimetype'] = $mimetype;
-					$entry['type'] = $mimetype;
-				}
-				if($value['share_with_displayname']==null){
-					$entry['share'] = false;
-				}else{
-					$entry['shareOwner'] = $value['share_with_displayname'];
-				}
-				$entry['fileid'] = $value['id'];
-				$entry['parent'] = $value['parent'];
-				$mtime = \OC\Files\Filesystem::filemtime($pathInfo);
-				$entry['modifydate'] = \OCP\Util::formatDate($mtime);
-				$entry['mtime'] = $value['stime'];
-				$entry['icon'] = $mimeTypeIcon;
-				$entry['name'] = basename($value['path']);
-				$entry['permissions'] = $value['permissions'];
-				$entry['size'] = \OC\Files\Filesystem::filesize($value['path']);
-				$entry['etag'] = \OC\Files\Filesystem::getETag($pathInfo);
-				$entry['path'] = $value['file_target'];
-				$entry['url'] = str_replace("%2F", "/",rawurlencode($value['path']));
-				$entry['owversion'] = $version[0];
-				$dataArray [] = $entry;
+				$userId = $this->userSession->getLoginName();
+				\OC\Files\Filesystem::initMountPoints($userId);
+				$view = new \OC\Files\View('/' . $userId . '/files');
+				$pathId = $value['file_source'];
+				$path = $view->getPath($pathId);
+				$pathInfo = $view->getFileInfo($path);
+				$shareList = \OCP\Share::getItemsShared("file", \OCP\Share::FORMAT_STATUSES);
+				$dataArray [] = $this->formatFileInfo($pathInfo,$shareList);
+
 			}
 		}
 		return $dataArray;
