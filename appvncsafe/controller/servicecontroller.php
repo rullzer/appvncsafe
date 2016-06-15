@@ -255,6 +255,61 @@ class ServiceController extends ApiController {
 	*	@NoCSRFRequired
 	*	@NoAdminRequired
 	*/
+	function formatFileInfoFilter($fileInfo,$shareList = null,$pathValue) {
+		$entry = array();
+		$mountType = null;
+		if ($fileInfo->isShared()) {
+			$mountType = 'shared';
+		} else if ($fileInfo->isMounted()) {
+			$mountType = 'external';
+		}
+		if ($mountType !== null) {
+			if ($fileInfo->getInternalPath() === '') {
+				$mountType .= '-root';
+			}
+			$entry['mountType'] = $mountType;
+		}
+		$path = preg_replace("/^files/","",$pathValue);
+		if ($mountType == 'external' || $mountType == 'shared') {
+			$path = \OC\Files\Filesystem::getPath($fileInfo['fileid']);
+		}
+		$entry['fileid'] = $fileInfo['fileid'];
+		$entry['parent'] = $fileInfo['parent'];
+		$entry['modifydate'] = \OCP\Util::formatDate($fileInfo['mtime']);
+		$entry['mtime'] = $fileInfo['mtime'] * 1000;
+		// only pick out the needed attributes
+		$entry['icon'] = \OCA\Files\Helper::determineIcon($fileInfo);
+		if (\OC::$server->getPreviewManager()->isMimeSupported($fileInfo['mimetype'])) {
+			$entry['isPreviewAvailable'] = true;
+		}
+		$entry['name'] = $fileInfo->getName();
+		$entry['permissions'] = $fileInfo['permissions'];
+		$entry['type'] = $fileInfo['mimetype'];
+		$entry['mimetype'] = $fileInfo['mimetype'];
+		$entry['size'] = $fileInfo['size'];
+		$entry['etag'] = $fileInfo['etag'];
+		$entry['path'] = $path;
+		$entry['url'] = str_replace("%2F", "/",rawurlencode($path));
+		if (isset($fileInfo['displayname_owner'])) {
+			$entry['shareOwner'] = $fileInfo['displayname_owner'];
+		}
+		if (isset($fileInfo['is_share_mount_point'])) {
+			$entry['isShareMountPoint'] = $fileInfo['is_share_mount_point'];
+		}
+		if ($shareList != null) {
+			if ($shareList[$fileInfo['fileid']] != null) {
+				$entry['share'] = $shareList[$fileInfo['fileid']]["link"];
+			}
+		}
+		$version = \OCP\Util::getVersion();
+		$entry['owversion'] = $version[0];
+		return $entry;
+	}
+
+	/**
+	*	@NoCSRFRequired
+	*	@NoAdminRequired
+	*/
 	public function formatFileInfos($fileInfos) {
 		$shareList = \OCP\Share::getItemsShared("file", \OCP\Share::FORMAT_STATUSES);
 		$files = array();
@@ -295,18 +350,18 @@ class ServiceController extends ApiController {
 	*	@NoAdminRequired
 	*/
 	public function getShareWithYou() {
-		$arr =  \OCP\Share::getItemsSharedWith('file');
+		$arr =  \OCP\Share::getItemSharedWithBySource('file');
 		$dataArray = array();
 		$version = \OCP\Util::getVersion();
 		foreach ($arr as $value) {
-			$userId = $value['displayname_owner'];
+			$userId = $this->userSession->getLoginName();
 			\OC\Files\Filesystem::initMountPoints($userId);
 			$view = new \OC\Files\View('/' . $userId . '/files');
 			$pathId = $value['file_source'];
 			$path = $view->getPath($pathId);
-			$pathInfo = $view->getFileInfo($path);
+			$fileInfo = $view->getFileInfo($path);
 			$shareList = \OCP\Share::getItemsShared("file", \OCP\Share::FORMAT_STATUSES);
-			$dataArray [] = $this->formatFileInfo($pathInfo,$shareList);
+			$dataArray [] = $this->formatFileInfoFilter($fileInfo,$shareList,$value['file_target']);
 		}
 		return $dataArray;
 	}
@@ -327,7 +382,7 @@ class ServiceController extends ApiController {
 			$path = $view->getPath($pathId);
 			$pathInfo = $view->getFileInfo($path);
 			$shareList = \OCP\Share::getItemsShared("file", \OCP\Share::FORMAT_STATUSES);
-			$dataArray [] = $this->formatFileInfo($pathInfo,$shareList);
+			$dataArray [] = $this->formatFileInfoFilter($pathInfo,$shareList,$value['file_target']);
 		}
 		return $dataArray;
 	}
@@ -355,8 +410,9 @@ class ServiceController extends ApiController {
 			if (!empty($shareTypes)) {
 				$file['shareTypes'] = $shareTypes;
 			}
+			$path =  \OC\Files\Filesystem::getPath($fileInfo['fileid']);
 			$shareList = \OCP\Share::getItemsShared("file", \OCP\Share::FORMAT_STATUSES);
-			$dataArray [] = $this->formatFileInfo($fileInfo,$shareList);
+			$dataArray [] = $this->formatFileInfoFilter($fileInfo,$shareList,$path);
 		}
 		return $this->encodeData($dataArray);
 	}
@@ -380,7 +436,7 @@ class ServiceController extends ApiController {
 				$path = $view->getPath($pathId);
 				$pathInfo = $view->getFileInfo($path);
 				$shareList = \OCP\Share::getItemsShared("file", \OCP\Share::FORMAT_STATUSES);
-				$dataArray [] = $this->formatFileInfo($pathInfo,$shareList);
+				$dataArray [] = $this->formatFileInfoFilter($pathInfo,$shareList,$value['file_target']);
 
 			}
 		}
