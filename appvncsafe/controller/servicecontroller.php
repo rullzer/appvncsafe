@@ -382,7 +382,7 @@ class ServiceController extends ApiController {
 			$path = $view->getPath($pathId);
 			$pathInfo = $view->getFileInfo($path);
 			$shareList = \OCP\Share::getItemsShared("file", \OCP\Share::FORMAT_STATUSES);
-			$dataArray [] = $this->formatFileInfoFilter($pathInfo,$shareList,$value['file_target']);
+			$dataArray [] = $this->formatFileInfoFilter($pathInfo,$shareList,$value['path']);
 		}
 		return $dataArray;
 	}
@@ -436,7 +436,7 @@ class ServiceController extends ApiController {
 				$path = $view->getPath($pathId);
 				$pathInfo = $view->getFileInfo($path);
 				$shareList = \OCP\Share::getItemsShared("file", \OCP\Share::FORMAT_STATUSES);
-				$dataArray [] = $this->formatFileInfoFilter($pathInfo,$shareList,$value['file_target']);
+				$dataArray [] = $this->formatFileInfoFilter($pathInfo,$shareList,$value['path']);
 
 			}
 		}
