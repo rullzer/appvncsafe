@@ -96,7 +96,7 @@ class ServiceController extends ApiController {
 	public function deleteFile($names) {
 		$fileNames  = explode(",",$names);
 		foreach($fileNames as $file){
-			\OC\Files\Filesystem::unlink($file);
+			\OC\Files\Filesystem::unlink(urldecode($file));
 		}
 		return \OCP\JSON::success();
 	}
@@ -143,8 +143,8 @@ class ServiceController extends ApiController {
 	*/
 	public function renameFile($oldname,$newname,$path) {
 		$path = urldecode($path);
-		$oldname = $oldname;
-		$newname = $newname;
+		$oldname = urldecode($oldname);
+		$newname = urldecode($newname);
 		$opath = $path.$oldname;
 		$npath = $path.$newname;
 		if(!(\OC\Files\Filesystem::rename($opath, $npath))) {
@@ -158,7 +158,7 @@ class ServiceController extends ApiController {
 	*	@NoAdminRequired
 	*/
 	public function createFolder($path) {
-		$path = $path;
+		$path = urldecode($path);
 		if (!\OC\Files\Filesystem::file_exists($path)) {
 			if(!\OC\Files\Filesystem::mkdir($path)) {
 				return $this->encodeData(array("status" => "error"));
