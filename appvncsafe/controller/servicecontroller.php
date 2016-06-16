@@ -96,7 +96,7 @@ class ServiceController extends ApiController {
 	public function deleteFile($names) {
 		$fileNames  = explode(",",$names);
 		foreach($fileNames as $file){
-			\OC\Files\Filesystem::unlink(urldecode($file));
+			\OC\Files\Filesystem::unlink($file);
 		}
 		return \OCP\JSON::success();
 	}
