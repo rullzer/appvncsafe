@@ -107,7 +107,7 @@ class ServiceController extends ApiController {
 	*/
 	public function copyFile($source,$destination) {
 		$src = explode(",",$source);
-		$dest = str_replace('+', '\\', $destination);
+		$dest = str_replace('+++', '\\', $destination);
 		foreach($src as $file) {
 			$file = str_replace('\\','/',$file);
 			$dfile = urldecode($file);
@@ -125,7 +125,7 @@ class ServiceController extends ApiController {
 	*/
 	public function moveFile($source,$destination) {
 		$src = explode(",",$source);
-		$dest = str_replace('+', '\\', $destination);
+		$dest = str_replace('+++', '\\', $destination);
 		foreach($src as $file){
 			$file = str_replace('\\','/',$file);
 			$dfile = urldecode($file);
