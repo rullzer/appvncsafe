@@ -69,7 +69,7 @@ class ServiceController extends ApiController {
 	*	@NoAdminRequired
 	*/
 	public function getShare($path) {
-		return $this->encodeData($this->formatFileInfo(\OC\Files\Filesystem::getFileInfo(urldecode($path))));
+		return $this->encodeData($this->formatFileInfo(\OC\Files\Filesystem::getFileInfo($path)));
 	}
 
 	/**
