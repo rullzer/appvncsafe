@@ -31,13 +31,15 @@ use \OCP\Share;
 use \OCA\Appvncsafe\Service\TagService;
 use \OCP\IUserSession;
 use \OCP\Files\Node;
+use \OCP\IDateTimeFormatter;
 
 class ServiceController extends ApiController {
 
 	private $tagservice;
 	private $userSession;
+	private $dateTimeFormatter;
 
-	public function __construct($appName, IRequest $request,$tagservice,IUserSession $userSession) {
+	public function __construct($appName, IRequest $request,$tagservice,IUserSession $userSession,IDateTimeFormatter $dateTimeFormatter) {
 		parent::__construct(
 			$appName,
 			$request,
@@ -46,6 +48,7 @@ class ServiceController extends ApiController {
 		);
 		$this->tagservice = $tagservice;
                 $this->userSession = $userSession;
+		$this->dateTimeFormatter = $dateTimeFormatter;
 	}
 
 	/**
@@ -98,7 +101,7 @@ class ServiceController extends ApiController {
 		foreach($fileNames as $file){
 			\OC\Files\Filesystem::unlink($file);
 		}
-		return \OCP\JSON::success();
+		return $this->encodeData(array("status" => "success"));
 	}
 
 	/**
@@ -220,7 +223,7 @@ class ServiceController extends ApiController {
 		}
 		$entry['fileid'] = $fileInfo['fileid'];
 		$entry['parent'] = $fileInfo['parent'];
-		$entry['modifydate'] = \OCP\Util::formatDate($fileInfo['mtime']);
+		$entry['modifydate'] = $this->dateTimeFormatter->formatDate($fileInfo['mtime']);
 		$entry['mtime'] = $fileInfo['mtime'] * 1000;
 		// only pick out the needed attributes
 		$entry['icon'] = \OCA\Files\Helper::determineIcon($fileInfo);
@@ -275,7 +278,7 @@ class ServiceController extends ApiController {
 		}
 		$entry['fileid'] = $fileInfo['fileid'];
 		$entry['parent'] = $fileInfo['parent'];
-		$entry['modifydate'] = \OCP\Util::formatDate($fileInfo['mtime']);
+		$entry['modifydate'] = $this->dateTimeFormatter->formatDate($fileInfo['mtime']);
 		$entry['mtime'] = $fileInfo['mtime'] * 1000;
 		// only pick out the needed attributes
 		$entry['icon'] = \OCA\Files\Helper::determineIcon($fileInfo);
