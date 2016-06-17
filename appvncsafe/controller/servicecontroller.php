@@ -143,8 +143,8 @@ class ServiceController extends ApiController {
 	*/
 	public function renameFile($oldname,$newname,$path) {
 		$path = urldecode($path);
-		$oldname = urldecode($oldname);
-		$newname = urldecode($newname);
+		$oldname = $oldname;
+		$newname = $newname;
 		$opath = $path.$oldname;
 		$npath = $path.$newname;
 		if(!(\OC\Files\Filesystem::rename($opath, $npath))) {
