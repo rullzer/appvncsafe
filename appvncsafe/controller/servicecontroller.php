@@ -53,7 +53,7 @@ class ServiceController extends ApiController {
 	*	@NoAdminRequired
 	*/
 	public function getList($name) {
-		return $this->encodeData($this->formatFileInfos(\OC\Files\Filesystem::getDirectoryContent(urldecode($name))));
+		return $this->encodeData($this->formatFileInfos(\OC\Files\Filesystem::getDirectoryContent($name)));
 	}
 
 	/**
@@ -61,7 +61,7 @@ class ServiceController extends ApiController {
 	*	@NoAdminRequired
 	*/
 	public function getTree($name) {
-		return $this->encodeData($this->formatFileInfos(\OC\Files\Filesystem::getDirectoryContent(urldecode($name),"httpd/unix-directory")));
+		return $this->encodeData($this->formatFileInfos(\OC\Files\Filesystem::getDirectoryContent($name,"httpd/unix-directory")));
 	}
 
 	/**
