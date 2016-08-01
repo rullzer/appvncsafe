@@ -251,6 +251,11 @@ class ServiceController extends ApiController {
 		}
 		$version = \OCP\Util::getVersion();
 		$entry['owversion'] = $version[0];
+		if($version[0]==9 && $version[1] >= 1){
+			$entry['allow_edit_permission'] = 15;
+		}else{
+			$entry['allow_edit_permission'] = 7;
+		}
 		return $entry;
 	}
 
@@ -306,6 +311,11 @@ class ServiceController extends ApiController {
 		}
 		$version = \OCP\Util::getVersion();
 		$entry['owversion'] = $version[0];
+		if($version[0]==9 && $version[1] >= 1){
+			$entry['allow_edit_permission'] = 15;
+		}else{
+			$entry['allow_edit_permission'] = 7;
+		}
 		return $entry;
 	}
 
