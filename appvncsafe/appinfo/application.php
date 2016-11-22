@@ -48,7 +48,8 @@ class Application extends App {
                 $c->query('Request'),
 		$c->query('TagService'),
 		$server->getUserSession(),
-		\OC::$server->getDateTimeFormatter()
+		\OC::$server->getDateTimeFormatter(),
+		'[appvncsafe]'
             );
         });
 

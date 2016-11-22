@@ -38,8 +38,9 @@ class ServiceController extends ApiController {
 	private $tagservice;
 	private $userSession;
 	private $dateTimeFormatter;
+	protected $appName;
 
-	public function __construct($appName, IRequest $request,$tagservice,IUserSession $userSession,IDateTimeFormatter $dateTimeFormatter) {
+	public function __construct($appName, IRequest $request,$tagservice,IUserSession $userSession,IDateTimeFormatter $dateTimeFormatter,$applicationName) {
 		parent::__construct(
 			$appName,
 			$request,
@@ -49,6 +50,7 @@ class ServiceController extends ApiController {
 		$this->tagservice = $tagservice;
                 $this->userSession = $userSession;
 		$this->dateTimeFormatter = $dateTimeFormatter;
+		$this->appName = $applicationName;
 	}
 
 	/**
@@ -56,6 +58,7 @@ class ServiceController extends ApiController {
 	*	@NoAdminRequired
 	*/
 	public function getList($name) {
+		\OC::$server->getLogger()->debug($this->appName . ' [ getList() Method ]   [ Parameter : $name = ' . $name .' ]');
 		return $this->encodeData($this->formatFileInfos(\OC\Files\Filesystem::getDirectoryContent($name)));
 	}
 
@@ -64,6 +67,7 @@ class ServiceController extends ApiController {
 	*	@NoAdminRequired
 	*/
 	public function getTree($name) {
+		\OC::$server->getLogger()->debug($this->appName . ' [ getTree() Method ]   [ Parameter : $name = ' . $name .' ]');
 		return $this->encodeData($this->formatFileInfos(\OC\Files\Filesystem::getDirectoryContent($name,"httpd/unix-directory")));
 	}
 
@@ -72,6 +76,7 @@ class ServiceController extends ApiController {
 	*	@NoAdminRequired
 	*/
 	public function getShare($path) {
+		\OC::$server->getLogger()->debug($this->appName . ' [ getShare() Method ]   [ Parameter : $path = ' . $path .' ]');
 		return $this->encodeData($this->formatFileInfo(\OC\Files\Filesystem::getFileInfo($path)));
 	}
 
@@ -80,6 +85,7 @@ class ServiceController extends ApiController {
 	*	@NoAdminRequired
 	*/
 	public function getSearch($query) {
+		\OC::$server->getLogger()->debug($this->appName . ' [ getSearch() Method ]   [ Parameter : $query = ' . $query .' ]');
 		return $this->encodeData($this->formatFileInfos(\OC\Files\Filesystem::search($query)));
 	}
 
@@ -88,6 +94,7 @@ class ServiceController extends ApiController {
 	*	@NoAdminRequired
 	*/
 	public function getFileExists($file) {
+		\OC::$server->getLogger()->debug($this->appName . ' [ getFileExists() Method ]   [ Parameter : $file = ' . $file .' ]');
 		$fileNames  = explode(",",$file);
 		return $this->encodeData($this->checkFileExists($fileNames));
 	}
@@ -97,6 +104,7 @@ class ServiceController extends ApiController {
 	*	@NoAdminRequired
 	*/
 	public function deleteFile($names) {
+		\OC::$server->getLogger()->debug($this->appName . ' [ deleteFile() Method ]   [ Parameter : $names = ' . $names .' ]');
 		$fileNames  = explode(",",$names);
 		foreach($fileNames as $file){
 			\OC\Files\Filesystem::unlink($file);
@@ -109,6 +117,7 @@ class ServiceController extends ApiController {
 	*	@NoAdminRequired
 	*/
 	public function copyFile($source,$destination) {
+		\OC::$server->getLogger()->debug($this->appName . ' [ copyFile() Method ]   [ Parameter : $source = ' . $source . ', $destination = '.$destination.' ]');
 		$src = explode(",",$source);
 		$dest = str_replace('+++', '\\', $destination);
 		foreach($src as $file) {
@@ -127,6 +136,7 @@ class ServiceController extends ApiController {
 	*	@NoAdminRequired
 	*/
 	public function moveFile($source,$destination) {
+		\OC::$server->getLogger()->debug($this->appName . ' [ moveFile() Method ]   [ Parameter : $source = ' . $source . ', $destination = '.$destination.' ]');
 		$src = explode(",",$source);
 		$dest = str_replace('+++', '\\', $destination);
 		foreach($src as $file){
@@ -145,6 +155,7 @@ class ServiceController extends ApiController {
 	*	@NoAdminRequired
 	*/
 	public function renameFile($oldname,$newname,$path) {
+		\OC::$server->getLogger()->debug($this->appName . ' [ renameFile() Method ]   [ Parameter : $oldname = ' . $oldname . ', $newname = '. $newname . ' , $path = '. $path .' ]');
 		$path = urldecode($path);
 		$oldname = $oldname;
 		$newname = $newname;
@@ -161,6 +172,7 @@ class ServiceController extends ApiController {
 	*	@NoAdminRequired
 	*/
 	public function createFolder($path) {
+		\OC::$server->getLogger()->debug($this->appName . ' [ createFolder() Method ]   [ Parameter : $path = '. $path .' ]');
 		$path = urldecode($path);
 		if (!\OC\Files\Filesystem::file_exists($path)) {
 			if(!\OC\Files\Filesystem::mkdir($path)) {
@@ -177,6 +189,7 @@ class ServiceController extends ApiController {
 	*	@NoAdminRequired
 	*/
 	public function sendMail($toaddress,$type,$link) {
+		\OC::$server->getLogger()->debug($this->appName . ' [ sendMail() Method ]   [ Parameter : $toaddress = ' . $toaddress . ', $type = '. $type . ' , $link = '. $link .' ]');
 		$toaddressh = urldecode($toaddress);
 		$link = urldecode($link);
 		$type = urldecode($type);
@@ -193,9 +206,7 @@ class ServiceController extends ApiController {
 	}
 
 	private function encodeData($data) {
-		/*if (is_array($data)) {
-			array_walk_recursive($data, array('OC_JSON', 'to_string'));
-		}*/
+		\OC::$server->getLogger()->debug($this->appName . ' [ encodeData() Method ]');
 		return json_decode(json_encode($data, JSON_HEX_TAG));
 	}
 
@@ -204,6 +215,7 @@ class ServiceController extends ApiController {
 	*	@NoAdminRequired
 	*/
 	function formatFileInfo($fileInfo,$shareList = null) {
+		\OC::$server->getLogger()->debug($this->appName . ' [ formatFileInfo() Method ]');
 		$entry = array();
 		$mountType = null;
 		if ($fileInfo->isShared()) {
@@ -264,6 +276,7 @@ class ServiceController extends ApiController {
 	*	@NoAdminRequired
 	*/
 	function formatFileInfoFilter($fileInfo,$shareList = null,$pathValue) {
+		\OC::$server->getLogger()->debug($this->appName . ' [ formatFileInfoFilter() Method ]   [ Parameter : $fileInfo = '. $fileInfo . ' , $shareList = '. $shareList  . ' , $pathValue = ' . $pathValue . ' ]');
 		$entry = array();
 		$mountType = null;
 		if ($fileInfo->isShared()) {
@@ -324,6 +337,7 @@ class ServiceController extends ApiController {
 	*	@NoAdminRequired
 	*/
 	public function formatFileInfos($fileInfos) {
+		\OC::$server->getLogger()->debug($this->appName . ' [ formatFileInfos() Method ]');
 		$shareList = \OCP\Share::getItemsShared("file", \OCP\Share::FORMAT_STATUSES);
 		$files = array();
 		foreach ($fileInfos as $fileInfo) {
@@ -333,6 +347,7 @@ class ServiceController extends ApiController {
 	}
 
 	function checkFileExists($files) {
+		\OC::$server->getLogger()->debug($this->appName . ' [ checkFileExists() Method ]');
 		foreach ($files as $file) {
 			if(\OC\Files\Filesystem::file_exists(urldecode($file))) {
 				return true;
@@ -342,6 +357,7 @@ class ServiceController extends ApiController {
 	}
 
 	function copyr($src, $dest){
+		\OC::$server->getLogger()->debug($this->appName . ' [ copyr() Method ]   [ Parameter : $src = '. $src . ' , $dest = '. $dest .' ]');
 		if (!\OC\Files\Filesystem::is_dir($src)) {
 			return \OC\Files\Filesystem::copy($src, $dest);
 		} else {
@@ -363,6 +379,7 @@ class ServiceController extends ApiController {
 	*	@NoAdminRequired
 	*/
 	public function getShareWithYou() {
+		\OC::$server->getLogger()->debug($this->appName . ' [ getShareWithYou() Method ] ');
 		$arr =  \OCP\Share::getItemSharedWithBySource('file');
 		$dataArray = array();
 		$version = \OCP\Util::getVersion();
@@ -384,6 +401,7 @@ class ServiceController extends ApiController {
 	*	@NoAdminRequired
 	*/
 	public function getShareWithOthers() {
+		\OC::$server->getLogger()->debug($this->appName . ' [ getShareWithOthers() Method ] ');
 		$arr =  \OCP\Share::getItemShared('file', null);
 		$dataArray = array();
 		$version = \OCP\Util::getVersion();
@@ -405,6 +423,7 @@ class ServiceController extends ApiController {
 	*	@NoAdminRequired
 	*/
 	public function getFavorites(){
+		\OC::$server->getLogger()->debug($this->appName . ' [ getFavorites() Method ] ');
 		$version = \OCP\Util::getVersion();
 		$names = "_%24!%3CFavorite%3E!%24_";
 		$nodes = $this->tagservice->getFilesByTag(urldecode($names));
@@ -435,6 +454,7 @@ class ServiceController extends ApiController {
 	*	@NoAdminRequired
 	*/
 	public function getShareWithLink() {
+		\OC::$server->getLogger()->debug($this->appName . ' [ getShareWithLink() Method ] ');
 		$arr =  \OCP\Share::getItemShared('file', null);
 		$dataArray = array();
 		$version = \OCP\Util::getVersion();
