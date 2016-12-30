@@ -475,4 +475,76 @@ class ServiceController extends ApiController {
 		}
 		return $dataArray;
 	}
+	
+	/**
+	*	@NoCSRFRequired
+	*	@NoAdminRequired
+	*/
+	public function deleteFiles($directory,$files){
+		$list[] = $directory;
+		$folder = dirname($directory);
+		$folder =  str_replace('\\','/',$directory);
+		$list = json_decode($files);
+		$folder = rtrim($folder, '/') . '/';
+		$error = array();
+		$success = array();
+		$i = 0;
+		foreach ($list as $file) {
+			if ($folder === '/') {
+				$file = ltrim($file, '/');
+				$delimiter = strrpos($file, '.d');
+				$filename = substr($file, 0, $delimiter);
+				$timestamp =  substr($file, $delimiter+2);
+			} else {
+				$filename = $folder . '/' . $file;
+				$timestamp = null;
+			}
+			self::delete($filename, \OCP\User::getUser(), $timestamp);
+		}
+	}
+
+	/**
+	*	@NoCSRFRequired
+	*	@NoAdminRequired
+	*/
+	public function deleteFromFolder($folder){
+		$list[] = $folder;
+		$folder = dirname($folder);
+		$folder = rtrim($folder, '/') . '/';
+		$error = array();
+		$success = array();
+		$i = 0;
+		foreach ($list as $file) {
+			if ($folder === '/') {
+				$file = ltrim($file, '/');
+				$delimiter = strrpos($file, '.d');
+				$filename = substr($file, 0, $delimiter);
+				$timestamp =  substr($file, $delimiter+2);
+			} else {
+				$filename = $folder . '/' . $file;
+				$timestamp = null;
+			}
+			self::delete($filename, \OCP\User::getUser(), $timestamp);
+		}
+	}
+
+	/**
+	*	@NoCSRFRequired
+	*	@NoAdminRequired
+	*/
+	public function delete($filename, $user, $timestamp = null) {
+		$view = new \OC\Files\View('/' . $user);
+		$size = 0;
+		if ($timestamp) {
+			$query = \OC_DB::prepare('DELETE FROM `*PREFIX*files_trash` WHERE `user`=? AND `id`=? AND `timestamp`=?');
+			$query->execute(array($user, $filename, $timestamp));
+			$file = $filename . '.d' . $timestamp;
+		} else {
+			$file = $filename;
+		}
+		\OC_Hook::emit('\OCP\Trashbin', 'preDelete', array('path' => '/files_trashbin/files/' . $file));
+		$view->unlink('/files_trashbin/files/' . $file);
+		\OC_Hook::emit('\OCP\Trashbin', 'delete', array('path' => '/files_trashbin/files/' . $file));
+		return $size;
+	}
 }

@@ -107,6 +107,16 @@ $application->registerRoutes($this, array(
 			'name' => 'service#getShareWithLink',
 			'url' => '/getsharewithlink',
 			'verb' => 'GET'
+		),
+		array(
+			'name' => 'service#deleteFiles',
+			'url' => '/deletefiles/{directory}/{files}',
+			'verb' => 'POST','requirements' => array('path' => '.+/')
+		),
+		array(
+			'name' => 'service#deleteFromFolder',
+			'url' => '/deletefromfolder/{folder}',
+			'verb' => 'POST'
 		)
 	)
 ));
