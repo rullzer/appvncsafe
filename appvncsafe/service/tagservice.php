@@ -111,5 +111,20 @@ class TagService {
 		}
 		return $allNodes;
 	}
+
+	/**
+	 * Get all files Id for the given tag
+	 * @param string $tagName tag name to filter by
+	 * @return FileId[] list of matching file Id
+	 * @throws \Exception if the tag does not exist
+	 */
+	public function getIdsByTag($tagName) {
+		try {
+			$fileIds = $this->tagger->getIdsForTag($tagName);
+		} catch (\Exception $e) {
+			return [];
+		}
+		return $fileIds;
+	}
 }
 

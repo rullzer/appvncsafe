@@ -117,6 +117,11 @@ $application->registerRoutes($this, array(
 			'name' => 'service#deleteFromFolder',
 			'url' => '/deletefromfolder/{folder}',
 			'verb' => 'POST'
+		),
+		array(
+			'name' => 'service#setUnsetFavorites',
+			'url' => '/tagfavorite/{path}/{tag}',
+			'verb' => 'POST'
 		)
 	)
 ));

@@ -215,6 +215,7 @@ class ServiceController extends ApiController {
 	*	@NoAdminRequired
 	*/
 	function formatFileInfo($fileInfo,$shareList = null) {
+		$favoriteTag = '_$!<Favorite>!$_';
 		\OC::$server->getLogger()->debug($this->appName . ' [ formatFileInfo() Method ]');
 		$entry = array();
 		$mountType = null;
@@ -234,6 +235,12 @@ class ServiceController extends ApiController {
 			$path = \OC\Files\Filesystem::getPath($fileInfo['fileid']);
 		}
 		$entry['fileid'] = $fileInfo['fileid'];
+		$entry['isFavoriteTag'] = 'false';
+		$allTags = [];
+		$allTags = $this->tagservice->getIdsByTag($favoriteTag);
+		if (in_array($entry['fileid'], $allTags)) {
+			$entry['isFavoriteTag'] = 'true';
+		}
 		$entry['parent'] = $fileInfo['parent'];
 		$entry['modifydate'] = $this->dateTimeFormatter->formatDate($fileInfo['mtime']);
 		$entry['mtime'] = $fileInfo['mtime'] * 1000;
@@ -546,5 +553,21 @@ class ServiceController extends ApiController {
 		$view->unlink('/files_trashbin/files/' . $file);
 		\OC_Hook::emit('\OCP\Trashbin', 'delete', array('path' => '/files_trashbin/files/' . $file));
 		return $size;
+	}
+
+	/**
+	*	@NoCSRFRequired
+	*	@NoAdminRequired
+	*/
+	public function setUnsetFavorites($path , $tag) {
+		$path = str_replace('\\','/',$path);
+		$tagName = '_%24!%3CFavorite%3E!%24_';
+		$tagArray = array(urldecode($tagName));
+		if($tag == "true"){
+			$this->tagservice->updateFileTags($path,$tagArray);
+		}else{
+			$tagArray = [];
+			$this->tagservice->updateFileTags($path,$tagArray);
+		}
 	}
 }
