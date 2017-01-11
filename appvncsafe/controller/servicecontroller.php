@@ -422,7 +422,7 @@ class ServiceController extends ApiController {
 			$shareList = \OCP\Share::getItemsShared("file", \OCP\Share::FORMAT_STATUSES);
 			$dataArray [] = $this->formatFileInfoFilter($pathInfo,$shareList,$value['path']);
 		}
-		return $dataArray;
+		return array_unique($dataArray);
 	}
 
 	/**
