@@ -3,7 +3,7 @@
 	<id>appvncsafe</id>
 	<name>appvncsafe</name>
 	<description>Module for VNCsafe</description>
-	<version>1.0.13</version>
+	<version>1.0.14</version>
 	<licence>AGPL</licence>
 	<author>VNC</author>
 	<dependencies>
