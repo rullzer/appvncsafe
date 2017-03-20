@@ -122,6 +122,16 @@ $application->registerRoutes($this, array(
 			'name' => 'service#setUnsetFavorites',
 			'url' => '/tagfavorite/{path}/{tag}',
 			'verb' => 'POST'
+		),
+		array(
+			'name' => 'service#restoreFiles',
+			'url' => '/restorefiles/{directory}/{files}',
+			'verb' => 'POST','requirements' => array('path' => '.+/')
+		),
+		array(
+			'name' => 'service#restoreFromFolder',
+			'url' => '/restorefromfolder/{folder}',
+			'verb' => 'POST'
 		)
 	)
 ));

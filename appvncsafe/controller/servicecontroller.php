@@ -32,6 +32,11 @@ use \OCA\Appvncsafe\Service\TagService;
 use \OCP\IUserSession;
 use \OCP\Files\Node;
 use \OCP\IDateTimeFormatter;
+use \OCP\Constants;
+use \OCP\Files\Cache\ICacheEntry;
+use OC\Files\View;
+use OC\Files\Filesystem;
+use OC\Files\FileInfo;
 
 class ServiceController extends ApiController {
 
@@ -39,6 +44,7 @@ class ServiceController extends ApiController {
 	private $userSession;
 	private $dateTimeFormatter;
 	protected $appName;
+	private static $scannedVersions = false;
 
 	public function __construct($appName, IRequest $request,$tagservice,IUserSession $userSession,IDateTimeFormatter $dateTimeFormatter,$applicationName) {
 		parent::__construct(
@@ -572,4 +578,308 @@ class ServiceController extends ApiController {
 			$this->tagservice->updateFileTags($path,$tagArray);
 		}
 	}
+	/**
+	*	@NoCSRFRequired
+	*	@NoAdminRequired
+	*/
+	public function restoreFiles($directory,$files){
+		$folder =  str_replace('\\','/',$directory);
+		$dir = rtrim($folder, '/'). '/';
+		$list = json_decode($files);
+		$error = array();
+		$success = array();
+		$i = 0;
+		foreach ($list as $file) {
+			$path = $dir . '/' . $file;
+			if ($dir === '/') {
+				$file = ltrim($file, '/');
+				$delimiter = strrpos($file, '.d');
+				$filename = substr($file, 0, $delimiter);
+				$timestamp =  substr($file, $delimiter+2);
+			} else {
+				$path_parts = pathinfo($file);
+				$filename = $path_parts['basename'];
+				$timestamp = null;
+			}
+			if ( !self::restore($path, $filename, $timestamp) ) {
+				$error[] = $filename;
+				\OCP\Util::writeLog('trashbin', 'can\'t restore ' . $filename, \OCP\Util::ERROR);
+			} else {
+				$success[$i]['filename'] = $file;
+				$success[$i]['timestamp'] = $timestamp;
+				$i++;
+			}
+		}
+	}
+
+	/**
+	*	@NoCSRFRequired
+	*	@NoAdminRequired
+	*/
+	public function restoreFromFolder($folder){
+		$folder =  str_replace('\\','/',$folder);
+		$dir = rtrim($folder, '/'). '/';
+		$list = array();
+		$dirListing = true;
+		if ($dir === '' || $dir === '/') {
+			$dirListing = false;
+		}
+		foreach (self::getTrashFiles($dir, \OCP\User::getUser()) as $file) {
+			$fileName = $file['name'];
+			if (!$dirListing) {
+				$fileName .= '.d' . $file['mtime'];
+			}
+			$list[] = $fileName;
+		}
+		$error = array();
+		$success = array();
+		$i = 0;
+		foreach ($list as $file) {
+			$path = $dir . '/' . $file;
+			if ($dir === '/') {
+				$file = ltrim($file, '/');
+				$delimiter = strrpos($file, '.d');
+				$filename = substr($file, 0, $delimiter);
+				$timestamp =  substr($file, $delimiter+2);
+			} else {
+				$path_parts = pathinfo($file);
+				$filename = $path_parts['basename'];
+				$timestamp = null;
+			}
+			if ( !self::restore($path, $filename, $timestamp) ) {
+				$error[] = $filename;
+				\OCP\Util::writeLog('trashbin', 'can\'t restore ' . $filename, \OCP\Util::ERROR);
+			} else {
+				$success[$i]['filename'] = $file;
+				$success[$i]['timestamp'] = $timestamp;
+				$i++;
+			}
+		}
+	}
+
+	public function restore($file, $filename, $timestamp) {
+		$user = \OCP\User::getUser();
+		$view = new View('/' . $user);
+		$location = '';
+		if ($timestamp) {
+			$location = self::getLocation($user, $filename, $timestamp);
+			if ($location === false) {
+				\OCP\Util::writeLog('files_trashbin', 'trash bin database inconsistent!', \OCP\Util::ERROR);
+			} else {
+				if ($location !== '/' &&
+					(!$view->is_dir('files/' . $location) ||
+					!$view->isCreatable('files/' . $location))
+				) {
+					$location = '';
+				}
+			}
+		}
+		$uniqueFilename = self::getUniqueFilename($location, $filename, $view);
+		$source = Filesystem::normalizePath('files_trashbin/files/' . $file);
+		$target = Filesystem::normalizePath('files/' . $location . '/' . $uniqueFilename);
+		if (!$view->file_exists($source)) {
+			return false;
+		}
+		$mtime = $view->filemtime($source);
+		$restoreResult = $view->rename($source, $target);
+		if ($restoreResult) {
+			$fakeRoot = $view->getRoot();
+			$view->chroot('/' . $user . '/files');
+			$view->touch('/' . $location . '/' . $uniqueFilename, $mtime);
+			$view->chroot($fakeRoot);
+			\OCP\Util::emitHook('\OCA\Files_Trashbin\Trashbin', 'post_restore', array('filePath' => Filesystem::normalizePath('/' . $location . '/' . $uniqueFilename),'trashPath' => Filesystem::normalizePath($file)));
+			self::restoreVersions($view, $file, $filename, $uniqueFilename, $location, $timestamp);
+			if ($timestamp) {
+				$query = \OC_DB::prepare('DELETE FROM `*PREFIX*files_trash` WHERE `user`=? AND `id`=? AND `timestamp`=?');
+				$query->execute(array($user, $filename, $timestamp));
+			}
+			return true;
+		}
+		return false;
+	}
+
+	public  function getLocations($user) {
+		$query = \OC_DB::prepare('SELECT `id`, `timestamp`, `location`' . ' FROM `*PREFIX*files_trash` WHERE `user`=?');
+		$result = $query->execute(array($user));
+		$array = array();
+		while ($row = $result->fetchRow()) {
+			if (isset($array[$row['id']])) {
+				$array[$row['id']][$row['timestamp']] = $row['location'];
+			} else {
+				$array[$row['id']] = array($row['timestamp'] => $row['location']);
+			}
+		}
+		return $array;
+	}
+
+
+	public function getUniqueFilename($location, $filename, View $view) {
+		$ext = pathinfo($filename, PATHINFO_EXTENSION);
+		$name = pathinfo($filename, PATHINFO_FILENAME);
+		$l = \OC::$server->getL10N('files_trashbin');
+		$location = '/' . trim($location, '/');
+		if ($ext !== '') {
+			$ext = '.' . $ext;
+		}
+		if ($view->file_exists('files' . $location . '/' . $filename)) {
+			$i = 2;
+			$uniqueName = $name . " (" . $l->t("restored") . ")" . $ext;
+			while ($view->file_exists('files' . $location . '/' . $uniqueName)) {
+				$uniqueName = $name . " (" . $l->t("restored") . " " . $i . ")" . $ext;
+				$i++;
+			}
+			return $uniqueName;
+		}
+		return $filename;
+	}
+
+
+	public function getLocation($user, $filename, $timestamp) {
+		$query = \OC_DB::prepare('SELECT `location` FROM `*PREFIX*files_trash`'. ' WHERE `user`=? AND `id`=? AND `timestamp`=?');
+		$result = $query->execute(array($user, $filename, $timestamp))->fetchAll();
+		if (isset($result[0]['location'])) {
+			return $result[0]['location'];
+		} else {
+			return false;
+		}
+	}
+
+	public function restoreVersions(View $view, $file, $filename, $uniqueFilename, $location, $timestamp) {
+		if (\OCP\App::isEnabled('files_versions')) {
+			$user = \OCP\User::getUser();
+			$rootView = new \OC\Files\View('/');
+			$target = Filesystem::normalizePath('/' . $location . '/' . $uniqueFilename);
+			list($owner, $ownerPath) = self::getUidAndFilename($target);
+			if (empty($ownerPath)) {
+				return false;
+			}
+			if ($timestamp) {
+				$versionedFile = $filename;
+			} else {
+				$versionedFile = $file;
+			}
+			if ($view->is_dir('/files_trashbin/versions/' . $file)) {
+				$rootView->rename(Filesystem::normalizePath($user . '/files_trashbin/versions/' . $file), Filesystem::normalizePath($owner . '/files_versions/' . $ownerPath));
+			} else if ($versions = self::getVersionsFromTrash($versionedFile, $timestamp, $user)) {
+				foreach ($versions as $v) {
+					if ($timestamp) {
+						$rootView->rename($user . '/files_trashbin/versions/' . $versionedFile . '.v' . $v . '.d' . $timestamp, $owner . '/files_versions/' . $ownerPath . '.v' . $v);
+					} else {
+						$rootView->rename($user . '/files_trashbin/versions/' . $versionedFile . '.v' . $v, $owner . '/files_versions/' . $ownerPath . '.v' . $v);
+					}
+				}
+			}
+		}
+	}
+
+	public  function getUidAndFilename($filename) {
+		$uid = Filesystem::getOwner($filename);
+		$userManager = \OC::$server->getUserManager();
+		if (!$userManager->userExists($uid)) {
+			$uid = \OCP\User::getUser();
+		}
+		if (!$uid) {
+			return [null, null];
+		}
+		Filesystem::initMountPoints($uid);
+		if ($uid != \OCP\User::getUser()) {
+			$info = Filesystem::getFileInfo($filename);
+			$ownerView = new \OC\Files\View('/' . $uid . '/files');
+			try {
+				$filename = $ownerView->getPath($info['fileid']);
+			} catch (NotFoundException $e) {
+				$filename = null;
+			}
+		}
+		return [$uid, $filename];
+	}
+
+	public  function getVersionsFromTrash($filename, $timestamp, $user) {
+		$view = new \OC\Files\View('/' . $user . '/files_trashbin/versions');
+		$versions = array();
+		if (!self::$scannedVersions) {
+			list($storage,) = $view->resolvePath('/');
+			$storage->getScanner()->scan('files_trashbin/versions');
+			self::$scannedVersions = true;
+		}
+		if ($timestamp) {
+			$matches = $view->searchRaw($filename . '.v%.d' . $timestamp);
+			$offset = -strlen($timestamp) - 2;
+		} else {
+			$matches = $view->searchRaw($filename . '.v%');
+		}
+		if (is_array($matches)) {
+			foreach ($matches as $ma) {
+				if ($timestamp) {
+					$parts = explode('.v', substr($ma['path'], 0, $offset));
+					$versions[] = (end($parts));
+				} else {
+					$parts = explode('.v', $ma);
+					$versions[] = (end($parts));
+				}
+			}
+		}
+		return $versions;
+	}
+
+	public function getTrashFiles($dir, $user, $sortAttribute = '', $sortDescending = false) {
+		$result = array();
+		$timestamp = null;
+
+		$view = new \OC\Files\View('/' . $user . '/files_trashbin/files');
+
+		if (ltrim($dir, '/') !== '' && !$view->is_dir($dir)) {
+			throw new \Exception('Directory does not exists');
+		}
+
+		$mount = $view->getMount($dir);
+		$storage = $mount->getStorage();
+		$absoluteDir = $view->getAbsolutePath($dir);
+		$internalPath = $mount->getInternalPath($absoluteDir);
+
+		$originalLocations = \OCA\Files_Trashbin\Trashbin::getLocations($user);
+		$dirContent = $storage->getCache()->getFolderContents($mount->getInternalPath($view->getAbsolutePath($dir)));
+		foreach ($dirContent as $entry) {
+			$entryName = $entry->getName();
+			$id = $entry->getId();
+			$name = $entryName;
+			if ($dir === '' || $dir === '/') {
+				$pathparts = pathinfo($entryName);
+				$timestamp = substr($pathparts['extension'], 1);
+				$name = $pathparts['filename'];
+
+			} else if ($timestamp === null) {
+				// for subfolders we need to calculate the timestamp only once
+				$parts = explode('/', ltrim($dir, '/'));
+				$timestamp = substr(pathinfo($parts[0], PATHINFO_EXTENSION), 1);
+			}
+			$originalPath = '';
+			if (isset($originalLocations[$id][$timestamp])) {
+				$originalPath = $originalLocations[$id][$timestamp];
+				if (substr($originalPath, -1) === '/') {
+					$originalPath = substr($originalPath, 0, -1);
+				}
+			}
+			$i = array(
+				'name' => $name,
+				'mtime' => $timestamp,
+				'mimetype' => $entry->getMimeType(),
+				'type' => $entry->getMimeType() === ICacheEntry::DIRECTORY_MIMETYPE ? 'dir' : 'file',
+				'directory' => ($dir === '/') ? '' : $dir,
+				'size' => $entry->getSize(),
+				'etag' => '',
+				'permissions' => Constants::PERMISSION_ALL - Constants::PERMISSION_SHARE
+			);
+			if ($originalPath) {
+				$i['extraData'] = $originalPath . '/' . $id;
+			}
+			$result[] = new FileInfo($absoluteDir . '/' . $i['name'], $storage, $internalPath . '/' . $i['name'], $i, $mount);
+		}
+
+		if ($sortAttribute !== '') {
+			return \OCA\Files\Helper::sortFiles($result, $sortAttribute, $sortDescending);
+		}
+		return $result;
+	}
+
 }
