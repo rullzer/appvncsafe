@@ -826,60 +826,119 @@ class ServiceController extends ApiController {
 		$result = array();
 		$timestamp = null;
 
-		$view = new \OC\Files\View('/' . $user . '/files_trashbin/files');
+		$version = \OCP\Util::getVersion();
+		if($version[0]==8){
+			$view = new \OC\Files\View('/' . $user . '/files_trashbin/files');
 
-		if (ltrim($dir, '/') !== '' && !$view->is_dir($dir)) {
-			throw new \Exception('Directory does not exists');
-		}
-
-		$mount = $view->getMount($dir);
-		$storage = $mount->getStorage();
-		$absoluteDir = $view->getAbsolutePath($dir);
-		$internalPath = $mount->getInternalPath($absoluteDir);
-
-		$originalLocations = \OCA\Files_Trashbin\Trashbin::getLocations($user);
-		$dirContent = $storage->getCache()->getFolderContents($mount->getInternalPath($view->getAbsolutePath($dir)));
-		foreach ($dirContent as $entry) {
-			$entryName = $entry->getName();
-			$id = $entry->getId();
-			$name = $entryName;
-			if ($dir === '' || $dir === '/') {
-				$pathparts = pathinfo($entryName);
-				$timestamp = substr($pathparts['extension'], 1);
-				$name = $pathparts['filename'];
-
-			} else if ($timestamp === null) {
-				// for subfolders we need to calculate the timestamp only once
-				$parts = explode('/', ltrim($dir, '/'));
-				$timestamp = substr(pathinfo($parts[0], PATHINFO_EXTENSION), 1);
+			if (ltrim($dir, '/') !== '' && !$view->is_dir($dir)) {
+				throw new \Exception('Directory does not exists');
 			}
-			$originalPath = '';
-			if (isset($originalLocations[$id][$timestamp])) {
-				$originalPath = $originalLocations[$id][$timestamp];
-				if (substr($originalPath, -1) === '/') {
-					$originalPath = substr($originalPath, 0, -1);
+
+			$dirContent = $view->opendir($dir);
+			if ($dirContent === false) {
+				return $result;
+			}
+
+			$mount = $view->getMount($dir);
+			$storage = $mount->getStorage();
+			$absoluteDir = $view->getAbsolutePath($dir);
+			$internalPath = $mount->getInternalPath($absoluteDir);
+
+			if (is_resource($dirContent)) {
+				$originalLocations = self::getLocations($user);
+				while (($entryName = readdir($dirContent)) !== false) {
+					if (!\OC\Files\Filesystem::isIgnoredDir($entryName)) {
+						$id = $entryName;
+						if ($dir === '' || $dir === '/') {
+							$size = $view->filesize($id);
+							$pathparts = pathinfo($entryName);
+							$timestamp = substr($pathparts['extension'], 1);
+							$id = $pathparts['filename'];
+
+						} else if ($timestamp === null) {
+							$size = $view->filesize($dir . '/' . $id);
+							$parts = explode('/', ltrim($dir, '/'));
+							$timestamp = substr(pathinfo($parts[0], PATHINFO_EXTENSION), 1);
+						}
+						$originalPath = '';
+						if (isset($originalLocations[$id][$timestamp])) {
+							$originalPath = $originalLocations[$id][$timestamp];
+							if (substr($originalPath, -1) === '/') {
+								$originalPath = substr($originalPath, 0, -1);
+							}
+						}
+						$i = array(
+							'name' => $id,
+							'mtime' => $timestamp,
+							'mimetype' => $view->is_dir($dir . '/' . $entryName) ? 'httpd/unix-directory' : \OC_Helper::getFileNameMimeType($id),
+							'type' => $view->is_dir($dir . '/' . $entryName) ? 'dir' : 'file',
+							'directory' => ($dir === '/') ? '' : $dir,
+							'size' => $size,
+						);
+						if ($originalPath) {
+							$i['extraData'] = $originalPath.'/'.$id;
+						}
+						$result[] = new FileInfo($absoluteDir . '/' . $i['name'], $storage, $internalPath . '/' . $i['name'], $i, $mount);
+					}
 				}
+				closedir($dirContent);
 			}
-			$i = array(
-				'name' => $name,
-				'mtime' => $timestamp,
-				'mimetype' => $entry->getMimeType(),
-				'type' => $entry->getMimeType() === ICacheEntry::DIRECTORY_MIMETYPE ? 'dir' : 'file',
-				'directory' => ($dir === '/') ? '' : $dir,
-				'size' => $entry->getSize(),
-				'etag' => '',
-				'permissions' => Constants::PERMISSION_ALL - Constants::PERMISSION_SHARE
-			);
-			if ($originalPath) {
-				$i['extraData'] = $originalPath . '/' . $id;
+			if ($sortAttribute !== '') {
+				return \OCA\Files\Helper::sortFiles($result, $sortAttribute, $sortDescending);
 			}
-			$result[] = new FileInfo($absoluteDir . '/' . $i['name'], $storage, $internalPath . '/' . $i['name'], $i, $mount);
-		}
+			return $result;
+		}else{
+			$view = new \OC\Files\View('/' . $user . '/files_trashbin/files');
 
-		if ($sortAttribute !== '') {
-			return \OCA\Files\Helper::sortFiles($result, $sortAttribute, $sortDescending);
+			if (ltrim($dir, '/') !== '' && !$view->is_dir($dir)) {
+				throw new \Exception('Directory does not exists');
+			}
+			$mount = $view->getMount($dir);
+			$storage = $mount->getStorage();
+			$absoluteDir = $view->getAbsolutePath($dir);
+			$internalPath = $mount->getInternalPath($absoluteDir);
+
+			$originalLocations = \OCA\Files_Trashbin\Trashbin::getLocations($user);
+			$dirContent = $storage->getCache()->getFolderContents($mount->getInternalPath($view->getAbsolutePath($dir)));
+			foreach ($dirContent as $entry) {
+				$entryName = $entry->getName();
+				$id = $entry->getId();
+				$name = $entryName;
+				if ($dir === '' || $dir === '/') {
+					$pathparts = pathinfo($entryName);
+					$timestamp = substr($pathparts['extension'], 1);
+					$name = $pathparts['filename'];
+				} else if ($timestamp === null) {
+					$parts = explode('/', ltrim($dir, '/'));
+					$timestamp = substr(pathinfo($parts[0], PATHINFO_EXTENSION), 1);
+				}
+				$originalPath = '';
+				if (isset($originalLocations[$id][$timestamp])) {
+					$originalPath = $originalLocations[$id][$timestamp];
+					if (substr($originalPath, -1) === '/') {
+						$originalPath = substr($originalPath, 0, -1);
+					}
+				}
+				$i = array(
+					'name' => $name,
+					'mtime' => $timestamp,
+					'mimetype' => $entry->getMimeType(),
+					'type' => $entry->getMimeType() === ICacheEntry::DIRECTORY_MIMETYPE ? 'dir' : 'file',
+					'directory' => ($dir === '/') ? '' : $dir,
+					'size' => $entry->getSize(),
+					'etag' => '',
+					'permissions' => Constants::PERMISSION_ALL - Constants::PERMISSION_SHARE
+				);
+				if ($originalPath) {
+					$i['extraData'] = $originalPath . '/' . $id;
+				}
+				$result[] = new FileInfo($absoluteDir . '/' . $i['name'], $storage, $internalPath . '/' . $i['name'], $i, $mount);
+			}
+			if ($sortAttribute !== '') {
+				return \OCA\Files\Helper::sortFiles($result, $sortAttribute, $sortDescending);
+			}
+			return $result;
 		}
-		return $result;
 	}
 
 }
