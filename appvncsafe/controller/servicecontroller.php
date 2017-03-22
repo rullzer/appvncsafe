@@ -179,7 +179,7 @@ class ServiceController extends ApiController {
 	*/
 	public function createFolder($path) {
 		\OC::$server->getLogger()->debug($this->appName . ' [ createFolder() Method ]   [ Parameter : $path = '. $path .' ]');
-		$path = urldecode($path);
+		$path = $path;
 		if (!\OC\Files\Filesystem::file_exists($path)) {
 			if(!\OC\Files\Filesystem::mkdir($path)) {
 				return $this->encodeData(array("status" => "error"));
