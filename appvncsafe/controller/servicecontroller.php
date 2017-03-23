@@ -548,7 +548,7 @@ class ServiceController extends ApiController {
 	public function delete($filename, $user, $timestamp = null) {
 		$view = new \OC\Files\View('/' . $user);
 		$size = 0;
-		$filename = urldecode($filename);
+		$filename = $filename;
 		if ($timestamp) {
 			$query = \OC_DB::prepare('DELETE FROM `*PREFIX*files_trash` WHERE `user`=? AND `id`=? AND `timestamp`=?');
 			$query->execute(array($user, $filename, $timestamp));
