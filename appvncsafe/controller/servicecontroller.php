@@ -941,4 +941,41 @@ class ServiceController extends ApiController {
 		}
 	}
 
+
+	/**Get deleted files list*/
+	/**
+	*	@NoCSRFRequired
+	*	@NoAdminRequired
+	*/
+	public function getDeletedFileList($dir){
+		\OC::$server->getLogger()->debug($this->appName . ' [ getDeletedFileList() Method ]   [ Parameter : $dir = ' . $dir .' ]');
+		$dir = str_replace('\\','/',$dir);
+		try {
+			$files = self::getTrashFiles($dir, \OCP\User::getUser(), 'mtime', false);
+		} catch (Exception $e) {
+		}
+		$encodedDir = \OCP\Util::encodePath($dir);
+		$data['permissions'] = 0;
+		$data['directory'] = $dir;
+		$data['files'] = self::formatFileInformation($files);
+		return $this->encodeData(array('data' => $data));
+	}
+
+	/**
+	*	@NoCSRFRequired
+	*	@NoAdminRequired
+	*/
+	public function formatFileInformation($fileInfos) {
+		$files = array();
+		$id = 0;
+		foreach ($fileInfos as $i) {
+			$entry = \OCA\Files\Helper::formatFileInfo($i);
+			$entry['id'] = $id++;
+			$entry['etag'] = $entry['mtime'];
+			$entry['permissions'] = \OCP\Constants::PERMISSION_READ;
+			$files[] = $entry;
+		}
+		return $files;
+	}
+
 }

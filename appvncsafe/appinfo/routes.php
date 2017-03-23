@@ -132,6 +132,11 @@ $application->registerRoutes($this, array(
 			'name' => 'service#restoreFromFolder',
 			'url' => '/restorefromfolder/{folder}',
 			'verb' => 'POST'
+		),
+		array(
+			'name' => 'service#getDeletedFileList',
+			'url' => '/getdeletedfilelist/{dir}',
+			'verb' => 'POST'
 		)
 	)
 ));
