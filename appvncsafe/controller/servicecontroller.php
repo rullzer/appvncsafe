@@ -567,7 +567,6 @@ class ServiceController extends ApiController {
 	*	@NoAdminRequired
 	*/
 	public function setUnsetFavorites($path , $tag) {
-		$path = urldecode($path);
 		$path = str_replace('\\','/',$path);
 		$tagName = '_%24!%3CFavorite%3E!%24_';
 		$tagArray = array(urldecode($tagName));
