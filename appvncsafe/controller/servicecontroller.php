@@ -978,4 +978,12 @@ class ServiceController extends ApiController {
 		return $files;
 	}
 
+	/**
+	*       @NoCSRFRequired
+	*       @NoAdminRequired
+	*/
+	public function getOwncloudInstanceId() {
+		$instanceId = \OC::$server->getSystemConfig()->getValue('instanceid', null);
+		return str_replace('"', '', $instanceId);
+	}
 }

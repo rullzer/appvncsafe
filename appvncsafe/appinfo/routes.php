@@ -57,6 +57,11 @@ $application->registerRoutes($this, array(
 			'requirements' => array('query' => '.+')
 		),
 		array(
+			'name' => 'service#getOwncloudInstanceId',
+			'url' => '/getowncloudinstanceid',
+			'verb' => 'GET'
+		),
+		array(
 			'name' => 'service#getFileExists',
 			'url' => '/fileexists/{file}',
 			'verb' => 'POST',
