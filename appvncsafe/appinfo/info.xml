@@ -7,6 +7,6 @@
 	<licence>AGPL</licence>
 	<author>VNC</author>
 	<dependencies>
-		<owncloud min-version="8.0" max-version="9.1" />
+		<nextcloud min-version="10" max-version="12" />
 	</dependencies>
 </info>
