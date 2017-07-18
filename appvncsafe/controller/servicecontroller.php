@@ -92,7 +92,7 @@ class ServiceController extends ApiController {
 	*/
 	public function getSearch($query) {
 		\OC::$server->getLogger()->debug($this->appName . ' [ getSearch() Method ]   [ Parameter : $query = ' . $query .' ]');
-		return $this->encodeData($this->formatFileInfos(\OC\Files\Filesystem::search($query)));
+		return $this->encodeData($this->formatFileInfos(\OC\Files\Filesystem::search(urldecode($query))));
 	}
 
 	/**
