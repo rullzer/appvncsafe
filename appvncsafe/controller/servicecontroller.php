@@ -276,6 +276,7 @@ class ServiceController extends ApiController {
 		}
 		$version = \OCP\Util::getVersion();
 		$entry['owversion'] = $version[0];
+		$entry['server'] = 'nextcloud';
 		if($version[0]==9 && $version[1] >= 1){
 			$entry['allow_edit_permission'] = 15;
 		}else{
