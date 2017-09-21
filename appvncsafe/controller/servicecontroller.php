@@ -394,7 +394,7 @@ class ServiceController extends ApiController {
 	*/
 	public function getShareWithYou() {
 		\OC::$server->getLogger()->debug($this->appName . ' [ getShareWithYou() Method ] ');
-		$arr =  \OCP\Share::getItemSharedWithBySource('file');
+		$arr =  \OCP\Share::getItemsSharedWith('file');
 		$dataArray = array();
 		$version = \OCP\Util::getVersion();
 		foreach ($arr as $value) {
