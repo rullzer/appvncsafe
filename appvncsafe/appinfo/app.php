@@ -23,8 +23,6 @@
 *
 */
 
-OCP\App::checkAppEnabled('appvncsafe');
-
 $version = \OCP\Util::getVersion();
 $navigationManager = \OC::$server->getNavigationManager();
 $navigationEntry = function (){
